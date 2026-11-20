@@ -10,11 +10,12 @@ whose blocks are **real, readable Java lines** (`for (int i = 0; i < 5; i++) {`)
 with a step debugger, and watches the farmhand work an original low-poly 3D garden.
 
 - Package / applicationId: `com.ccs.coffee_n_crops`
-- State: 56 playable levels. Levels 33–39 cover interfaces, arrays of objects, polymorphism and
+- State: 67 playable levels and a free-play sandbox. Levels 33–39 cover interfaces, arrays of objects, polymorphism and
   advanced OOP. Levels 40–46 cover iterators, optional results, streams, assertions and shared
   state. Levels 47–52 cover lambdas, method references and stream pipelines. Levels 53–56 use
   two working farmhands, a shared tally, `ReentrantLock` and lock ordering. Levels 12–56 have
-  automated reference solutions.
+  automated reference solutions. Levels 57–67 add coffee, string and map operations, int arrays
+  and grids, switch fall-through, typed crop scanning and functional-interface values.
 
 ## Hard rules (set by the project owner — do not break)
 
@@ -36,10 +37,11 @@ with a step debugger, and watches the farmhand work an original low-poly 3D gard
 Run from the project root. JDK 17 is required; the Gradle wrapper (8.13) and AGP 8.11.1 are set up.
 
 ```bash
-./gradlew testDebugUnitTest      # 215 JVM tests, no device needed
+./gradlew testDebugUnitTest      # JVM tests, no device needed
 ./gradlew assembleDebug          # -> app/build/outputs/apk/debug/app-debug.apk
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 adb shell am start -S --activity-clear-task -n com.ccs.coffee_n_crops/.app.MainActivity
+./gradlew connectedDebugAndroidTest # Android UI smoke test
 ```
 
 Notes:
@@ -124,7 +126,7 @@ Source root: `app/src/main/java/com/ccs/coffee_n_crops/`
   also inspect the program to require the construct being taught.
 - **Palette tabs:** `BlockSpec.tab` files a statement block under `Farm`, `loops`, `if / switch`,
   `variables`, `methods`, `exceptions` or `objects`; `pinned` keeps Delete beside the scrollable tabs. Tabs
-  appear only with more than five code blocks. Slot choices are a single untabbed row.
+  appear only with more than five code blocks. Busy expression slots also group choices in tabs.
 
 ## Recipe: adding a language feature
 
@@ -162,16 +164,17 @@ emulator) and build at least one affected level by tapping. Useful `adb` calls:
 `adb shell input tap X Y`, `adb shell input swipe X1 Y1 X2 Y2 900`, `adb exec-out screencap -p > s.png`.
 Slow swipes (about 900 ms) avoid a fling swallowing the next tap.
 
-**Currently unverified on a device** (see ROADMAP "Verify first"): palette tabs, Delete of
-if/switch arms, the `+ case` / `+ default` buttons, Pause/Resume mid-run, and the methods editor
-in levels 12–15 and exception editor in levels 16–18.
-Class tabs, member folding, constructor parameters and cross-class debugger navigation in levels
-19–22 are also pending a physical device check.
+See ROADMAP "Release verification" for the device coverage and additional manual scenarios.
+The instrumented smoke test uses in-memory programs without writing the player's save.
+
+Release builds enable R8 and shrink resources. Gradle signs `assembleRelease` and `bundleRelease`
+when `COFFEE_RELEASE_STORE` points to the local JKS, `COFFEE_RELEASE_PASSWORD` is set, and the
+store contains the `coffee-and-crops` key. Use `COFFEE_RELEASE_KEY_PASSWORD` if its password differs.
 
 ## Known limitations (intentional gaps, not bugs)
 
-- `switch` has no fall-through; every case that can reach its end has a fixed `break;`.
-  An arm that always returns omits its otherwise unreachable `break;`.
+- `switch` cases break by default. The dedicated lesson and sandbox can enable fall-through
+  per case. An arm that always returns omits its otherwise unreachable `break;`.
 - Method names are auto-assigned; the palette creates void helpers, int-returning helpers and
   void helpers with one int parameter. Every helper also explicitly receives `Farmhand farmer`.
 - OOP supports one constructor and one method per name. Each class can directly implement one
@@ -181,13 +184,12 @@ Class tabs, member folding, constructor parameters and cross-class debugger navi
 - Exceptions support the farm hierarchy with single-type catch arms and optional finally;
   no `throw`, multi-catch, try-with-resources or exception inspection methods yet. Deleting an
   empty optional catch/finally arm retains the last required handler when try contains code.
-- One-dimensional `int[]` arrays can be allocated and written by index. The 2D scanner still
-  supplies the only `int[][]` values, and array literals are not available.
+- `int[]` arrays support allocation, literals and indexed writes. Rectangular `int[][]` arrays
+  support allocation and cell writes.
 - `ArrayList<Integer>` supports `add`, `get`, `size`, `contains`, `set`, index-based `remove`,
   and for-each. Its sequential streams support integer `map`, boolean `filter`, block-lambda
   `forEach`, bound `list::add`, `count` (which returns `long`), `anyMatch`, and `findFirst`.
   Stream parameters are scoped to their lambdas. Captured locals must be effectively final.
-- Strings are the fixed crop names; no concatenation or typed text.
-- The scanner returns int codes (0 nothing, 1 young, 2 ripe), not an enum.
-- Persistence is JSON files + SharedPreferences, not Room.
+- The original scanner uses integer codes. New lessons can use the typed `Crop` scanner.
+- Persistence uses JSON files and SharedPreferences.
 - Team levels use two farmhands on a shared grid, each with an editable job in the same program.

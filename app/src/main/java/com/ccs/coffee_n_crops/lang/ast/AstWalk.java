@@ -9,7 +9,11 @@ import com.ccs.coffee_n_crops.lang.ast.expr.ListContains;
 import com.ccs.coffee_n_crops.lang.ast.expr.CollectionCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamLambda;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionValue;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.NewIntArray;
+import com.ccs.coffee_n_crops.lang.ast.expr.NewIntGrid;
+import com.ccs.coffee_n_crops.lang.ast.expr.IntArrayLiteral;
 import com.ccs.coffee_n_crops.lang.ast.expr.NewObjectArray;
 import com.ccs.coffee_n_crops.lang.ast.expr.ObjectArrayGet;
 import com.ccs.coffee_n_crops.lang.ast.stmt.ArrayAssign;
@@ -18,6 +22,10 @@ import com.ccs.coffee_n_crops.lang.ast.expr.Binary;
 import com.ccs.coffee_n_crops.lang.ast.expr.MethodCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.Not;
 import com.ccs.coffee_n_crops.lang.ast.expr.StrEquals;
+import com.ccs.coffee_n_crops.lang.ast.expr.CropEquals;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringConcat;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringLength;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringIntMapCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.UserCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.NewObject;
 import com.ccs.coffee_n_crops.lang.ast.expr.FieldAccess;
@@ -152,8 +160,15 @@ public final class AstWalk {
             return;
         } else if (s instanceof ForEachStmt) {
             v.visit(((ForEachStmt) s).variable);
-        } else if (s instanceof SwitchStmt) {
-            expr(((SwitchStmt) s).subject.get(), v);
+        } else if (s instanceof SwitchStmt selection) {
+            expr(selection.subject.get(), v);
+            for (SwitchStmt.Case arm : selection.cases()) {
+                v.visit(arm);
+                expr(arm.label.get(), v);
+                walk(arm.body, v);
+            }
+            if (selection.defaultBlock() != null) walk(selection.defaultBlock(), v);
+            return;
         } else if (s instanceof VarDecl) {
             expr(((VarDecl) s).init.get(), v);
         } else if (s instanceof Assign) {
@@ -166,6 +181,7 @@ public final class AstWalk {
             ArrayAssign assignment = (ArrayAssign) s;
             expr(assignment.index.get(), v);
             expr(assignment.value.get(), v);
+            if (assignment.column != null) expr(assignment.column.get(), v);
         } else if (s instanceof ObjectArrayAssign) {
             ObjectArrayAssign assignment = (ObjectArrayAssign) s;
             expr(assignment.index.get(), v);
@@ -201,6 +217,16 @@ public final class AstWalk {
         } else if (e instanceof Binary) {
             expr(((Binary) e).left.get(), v);
             expr(((Binary) e).right.get(), v);
+        } else if (e instanceof StringConcat concat) {
+            expr(concat.left.get(), v);
+            expr(concat.right.get(), v);
+        } else if (e instanceof StringIntMapCall call) {
+            for (ExprSlot argument : call.arguments) expr(argument.get(), v);
+        } else if (e instanceof StringLength length) {
+            expr(length.text.get(), v);
+        } else if (e instanceof CropEquals comparison) {
+            expr(comparison.left.get(), v);
+            expr(comparison.right.get(), v);
         } else if (e instanceof StrEquals) {
             expr(((StrEquals) e).left.get(), v);
             expr(((StrEquals) e).right.get(), v);
@@ -208,6 +234,11 @@ public final class AstWalk {
             expr(((Not) e).operand.get(), v);
         } else if (e instanceof Access) {
             for (ExprSlot arg : ((Access) e).args) expr(arg.get(), v);
+        } else if (e instanceof NewIntGrid grid) {
+            expr(grid.rows.get(), v);
+            expr(grid.columns.get(), v);
+        } else if (e instanceof IntArrayLiteral array) {
+            for (ExprSlot element : array.elements()) expr(element.get(), v);
         } else if (e instanceof NewIntArray) {
             expr(((NewIntArray) e).length.get(), v);
         } else if (e instanceof NewObjectArray) {
@@ -219,6 +250,10 @@ public final class AstWalk {
         } else if (e instanceof CollectionCall) {
             ExprSlot argument = ((CollectionCall) e).argument;
             if (argument != null) expr(argument.get(), v);
+        } else if (e instanceof FunctionValue function) {
+            walk(function.callback, v);
+        } else if (e instanceof FunctionCall function) {
+            expr(function.argument.get(), v);
         } else if (e instanceof StreamCall stream) {
             for (StreamCall.Stage stage : stream.stages) walk(stage.callback(), v);
             if (stream.callback != null) walk(stream.callback, v);

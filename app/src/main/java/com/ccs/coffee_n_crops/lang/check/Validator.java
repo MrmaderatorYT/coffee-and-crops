@@ -30,6 +30,8 @@ import com.ccs.coffee_n_crops.lang.ast.expr.NewList;
 import com.ccs.coffee_n_crops.lang.ast.expr.ListContains;
 import com.ccs.coffee_n_crops.lang.ast.expr.CollectionCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.NewIntArray;
+import com.ccs.coffee_n_crops.lang.ast.expr.NewIntGrid;
+import com.ccs.coffee_n_crops.lang.ast.expr.IntArrayLiteral;
 import com.ccs.coffee_n_crops.lang.ast.expr.NewObjectArray;
 import com.ccs.coffee_n_crops.lang.ast.expr.ObjectArrayGet;
 import com.ccs.coffee_n_crops.lang.ast.stmt.ArrayAssign;
@@ -37,6 +39,11 @@ import com.ccs.coffee_n_crops.lang.ast.stmt.ObjectArrayAssign;
 import com.ccs.coffee_n_crops.lang.ast.expr.Not;
 import com.ccs.coffee_n_crops.lang.ast.expr.PostIncrement;
 import com.ccs.coffee_n_crops.lang.ast.expr.StrEquals;
+import com.ccs.coffee_n_crops.lang.ast.expr.CropEquals;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringConcat;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringLength;
+import com.ccs.coffee_n_crops.lang.ast.expr.NewStringIntMap;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringIntMapCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.UserCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.VarRef;
 import com.ccs.coffee_n_crops.lang.ast.stmt.Assign;
@@ -53,6 +60,10 @@ import com.ccs.coffee_n_crops.lang.ast.stmt.TeamStmt;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamCallback;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamLambda;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionValue;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionCall;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionVariable;
+import com.ccs.coffee_n_crops.lang.ast.expr.IntegerMethodRef;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamMethodRef;
 import com.ccs.coffee_n_crops.lang.ast.stmt.ListAdd;
 import com.ccs.coffee_n_crops.lang.ast.stmt.ListRemove;
@@ -560,8 +571,10 @@ public final class Validator {
         }
         if (s instanceof ArrayAssign) {
             ArrayAssign assignment = (ArrayAssign) s;
-            Problem p = use(assignment.name, JType.INT_ARRAY, s, env);
+            JType arrayType = assignment.column == null ? JType.INT_ARRAY : JType.INT_GRID;
+            Problem p = use(assignment.name, arrayType, s, env);
             if (p == null) p = slot(assignment.index, s, env);
+            if (p == null && assignment.column != null) p = slot(assignment.column, s, env);
             return p != null ? p : slot(assignment.value, s, env);
         }
         if (s instanceof ObjectArrayAssign) {
@@ -618,7 +631,8 @@ public final class Validator {
                     && !(expression instanceof PostIncrement)
                     && !(expression instanceof ListContains) && !(expression instanceof CollectionCall)
                     && !(expression instanceof AtomicCounter) && !(expression instanceof StreamCall)
-                    && !(expression instanceof NewReentrantLock)) {
+                    && !(expression instanceof NewReentrantLock)
+                    && !(expression instanceof StringIntMapCall) && !(expression instanceof FunctionCall)) {
                 return new Problem(s, "not a statement");
             }
             return expr(expression, null, s, env);
@@ -668,7 +682,7 @@ public final class Validator {
                 if (problem != null) return problem;
                 JType collection = env.valueType(f.source);
                 itemType = collection == JType.INT_ARRAY || collection == JType.INT_LIST
-                        ? JType.INT : collection.elementType;
+                        ? JType.INT : collection == JType.CROP_ARRAY ? JType.CROP : collection.elementType;
                 if (itemType == null) {
                     return new Problem(s, "for-each not applicable to expression type "
                             + collection.javaName);
@@ -686,6 +700,9 @@ public final class Validator {
             if (p != null) return p;
             Set<Object> labels = new HashSet<>();
             for (SwitchStmt.Case c : sw.cases()) {
+                p = slot(c.label, s, env);
+                if (p != null) return p;
+                if (c.value() == null) return new Problem(s, "constant expression required");
                 if (!labels.add(c.value())) {
                     return new Problem(s, "duplicate case label: "
                             + JavaPrinter.literalText(sw.subject.type, c.value()));
@@ -845,6 +862,32 @@ public final class Validator {
             Problem problem = slot(((Not) e).operand, at, env);
             if (problem != null) return problem;
             actual = JType.BOOLEAN;
+        } else if (e instanceof StringConcat concat) {
+            Problem problem = slot(concat.left, at, env);
+            if (problem == null) problem = slot(concat.right, at, env);
+            if (problem != null) return problem;
+            actual = JType.STRING;
+        } else if (e instanceof NewStringIntMap) {
+            actual = JType.STRING_INT_MAP;
+        } else if (e instanceof StringIntMapCall call) {
+            Problem problem = use(call.name, JType.STRING_INT_MAP, at, env);
+            for (ExprSlot argument : call.arguments) {
+                if (problem == null) problem = slot(argument, at, env);
+            }
+            if (problem != null) return problem;
+            actual = call.op.resultType;
+        } else if (e instanceof StringLength length) {
+            Problem problem = slot(length.text, at, env);
+            if (problem != null) return problem;
+            if (length.text.get() instanceof Literal literal && literal.value == null) {
+                return new Problem(at, "<null> cannot be dereferenced");
+            }
+            actual = JType.INT;
+        } else if (e instanceof CropEquals comparison) {
+            Problem problem = slot(comparison.left, at, env);
+            if (problem == null) problem = slot(comparison.right, at, env);
+            if (problem != null) return problem;
+            actual = JType.BOOLEAN;
         } else if (e instanceof StrEquals) {
             Problem problem = slot(((StrEquals) e).left, at, env);
             if (problem == null) problem = slot(((StrEquals) e).right, at, env);
@@ -860,7 +903,7 @@ public final class Validator {
                 if (problem == null) problem = slot(argument, at, env);
             }
             if (problem != null) return problem;
-            actual = JType.INT;
+            actual = access.kind.resultType;
         } else if (e instanceof UserCall) {
             UserCall call = (UserCall) e;
             if (env.teamActor != null) return actorProblem(at, env);
@@ -889,6 +932,17 @@ public final class Validator {
             actual = call.returnType;
         } else if (e instanceof NewList) {
             actual = JType.INT_LIST;
+        } else if (e instanceof NewIntGrid grid) {
+            Problem problem = slot(grid.rows, at, env);
+            if (problem == null) problem = slot(grid.columns, at, env);
+            if (problem != null) return problem;
+            actual = JType.INT_GRID;
+        } else if (e instanceof IntArrayLiteral array) {
+            for (ExprSlot element : array.elements()) {
+                Problem problem = slot(element, at, env);
+                if (problem != null) return problem;
+            }
+            actual = JType.INT_ARRAY;
         } else if (e instanceof NewIntArray) {
             Problem problem = slot(((NewIntArray) e).length, at, env);
             if (problem != null) return problem;
@@ -917,6 +971,18 @@ public final class Validator {
             actual = counter.op.type;
         } else if (e instanceof NewReentrantLock) {
             actual = JType.REENTRANT_LOCK;
+        } else if (e instanceof FunctionValue function) {
+            if (function.callback instanceof StreamLambda lambda && lambda.body != null) {
+                return new Problem(at, "a standalone lambda requires an expression body");
+            }
+            Problem problem = streamCallback(function.callback, function.function.result, at, env);
+            if (problem != null) return problem;
+            actual = function.function.type;
+        } else if (e instanceof FunctionCall function) {
+            Problem problem = use(function.name, function.function.type, at, env);
+            if (problem == null) problem = slot(function.argument, at, env);
+            if (problem != null) return problem;
+            actual = function.function.result;
         } else if (e instanceof StreamCall call) {
             if (call.callback instanceof StreamLambda lambda && lambda.body != null) {
                 return new Problem(at, "a forEach block lambda requires its own statement");
@@ -964,6 +1030,8 @@ public final class Validator {
         if (callback == null || callback.resultType != expected) {
             return new Problem(at, "incompatible types: bad return type in lambda expression");
         }
+        if (callback instanceof IntegerMethodRef) return null;
+        if (callback instanceof FunctionVariable stored) return use(stored.name, stored.function.type, at, env);
         if (callback instanceof StreamMethodRef method) {
             if (!"add".equals(method.method)) return new Problem(at, "invalid method reference");
             return use(method.receiver, JType.INT_LIST, at, env);
@@ -1095,14 +1163,23 @@ public final class Validator {
         }
         if (expression instanceof MethodCall) return ((MethodCall) expression).returnType;
         if (expression instanceof Binary binary) return binaryResult(binary, env);
-        if (expression instanceof Not || expression instanceof StrEquals) return JType.BOOLEAN;
+        if (expression instanceof StringConcat) return JType.STRING;
+        if (expression instanceof NewStringIntMap) return JType.STRING_INT_MAP;
+        if (expression instanceof StringIntMapCall call) return call.op.resultType;
+        if (expression instanceof Not || expression instanceof StrEquals || expression instanceof CropEquals) {
+            return JType.BOOLEAN;
+        }
+        if (expression instanceof Access access) return access.kind.resultType;
         if (expression instanceof NewList) return JType.INT_LIST;
-        if (expression instanceof NewIntArray) return JType.INT_ARRAY;
+        if (expression instanceof NewIntGrid) return JType.INT_GRID;
+        if (expression instanceof NewIntArray || expression instanceof IntArrayLiteral) return JType.INT_ARRAY;
         if (expression instanceof NewObjectArray) return JType.objectArray(((NewObjectArray) expression).elementType);
         if (expression instanceof ObjectArrayGet) return env.valueType(((ObjectArrayGet) expression).name).elementType;
         if (expression instanceof ListContains) return JType.BOOLEAN;
         if (expression instanceof CollectionCall call) return call.op.resultType;
         if (expression instanceof StreamCall call) return call.terminal.resultType;
+        if (expression instanceof FunctionValue function) return function.function.type;
+        if (expression instanceof FunctionCall function) return function.function.result;
         return JType.INT;
     }
 

@@ -1,0 +1,18 @@
+class Program {
+    void run(Farmhand farmer) {
+        Route route = new Route(1);
+        Route route2 = new Route(1);
+        route2.column = 2;
+        farmer.walkTo(route.column, 0);
+        farmer.harvest();
+        farmer.walkTo(route2.column, 0);
+        farmer.harvest();
+    }
+}
+
+class Route {
+    int column = 0;
+    Route(int column) {
+        this.column = column;
+    }
+}

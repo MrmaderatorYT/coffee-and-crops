@@ -17,6 +17,6 @@ public abstract class StreamCallback extends Node {
     abstract Bound bind(ExecutionContext ctx);
 
     interface Bound {
-        Value apply(int element) throws InterruptedException;
+        Value apply(ExecutionContext ctx, int element) throws InterruptedException;
     }
 }

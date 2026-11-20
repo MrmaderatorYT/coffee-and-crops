@@ -1,6 +1,7 @@
 package com.ccs.coffee_n_crops.lang.ast.stmt;
 
 import com.ccs.coffee_n_crops.farm.Direction;
+import com.ccs.coffee_n_crops.farm.Crop;
 import com.ccs.coffee_n_crops.lang.ast.Ast;
 import com.ccs.coffee_n_crops.lang.ast.Stmt;
 import com.ccs.coffee_n_crops.lang.interp.ExecutionContext;
@@ -66,6 +67,12 @@ public final class ForEachStmt extends Stmt {
             // An enhanced for loop keeps the array reference and reads each element as it goes.
             for (int element : collection.asIntArray()) {
                 if (!execItem(ctx, Value.ofInt(element))) return;
+            }
+            return;
+        }
+        if (collection.type == JType.CROP_ARRAY) {
+            for (Crop crop : collection.asCropArray()) {
+                if (!execItem(ctx, new Value(JType.CROP, crop))) return;
             }
             return;
         }

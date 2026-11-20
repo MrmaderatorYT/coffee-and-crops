@@ -23,12 +23,16 @@ two levels, tests, then verify on a device.
 | 9 | Shared state | 44–46 | paired worker threads, `synchronized`, `volatile`, `AtomicInteger` |
 | 8 | Stream pipelines | 47–52 | expression and block lambdas, bound method references, `map`, `forEach`, `count`, `anyMatch` |
 | 9 | Farmhand teams | 53–56 | two working farmhands, shared harvest tallies, `ReentrantLock`, lock ordering and deadlock detection |
+| Farm | Coffee and navigation | 57–58 | coffee harvest, watering, fertilizer, timed growth and rocks |
+| Practice | Strings, maps and arrays | 59–62 | text entry, `+`, `length()`, `HashMap`, array literals and 2D grid writes |
+| Practice | Flow and typed scanning | 63–65 | `-=`, switch fall-through, and `Crop[]` |
+| 8 | Function values | 66–67 | functional-interface variables, `Math::abs`, and `int[]::new` |
 
 Also done: tree-walking interpreter with one thread per farmhand; step debugger (Play, Pause, Step,
 x1/x5/x10) with line highlighting; pre-run validator with javac-style errors; block editor with
 typed slots, soft-wrapped lines and scrollable palette tabs; JSON save per level (including helper
 methods, backward compatible with old saves); level select with progress; original 3D garden and human farmhand.
-The JVM suite has 215 passing tests covering saved reference solutions for levels 12–56, source
+The 0.2.0 JVM suite has 228 passing tests covering saved reference solutions, source
 compilation with the build JDK, stepping, structural editor edits, object behavior, save migration,
 viewport fitting and action interpolation. Debug APK assembly and Android Lint pass.
 
@@ -77,14 +81,22 @@ The 3D redesign was installed on a Pixel 7a and verified by replaying the pre-up
 program. The original save loaded with the Farmhand API and completed with 7 wheat and 4
 watered plants. Adding and deleting a command in level 1 also worked on the device.
 
-## 0. Verify first (nothing here is known to be broken, it is just untested on a screen)
+## 0. Release verification
+
+For 0.2.0, Pixel 7a smoke checks covered undo/redo, reordering, copying, variable renaming,
+typed text and cursor restoration, expression tabs, level 19 completion, switch case creation,
+default creation and deletion, duplicate case validation, debugger Step/Resume/Reset, paused
+variables, hints opening, and the side-by-side landscape layout. All 67 levels have bundled
+worked solutions and star targets measured from successful reference runs.
+
+Additional manual regression scenarios for future editor changes:
 
 - [ ] Palette tabs: the scrollable strip (up to six tabs + fixed `⌫ Delete`) fits the width; tabs switch; small levels
       still show a single row; arm buttons appear in every tab.
 - [ ] Delete removes an empty `else`, `else if`, `case`, `default`.
-- [ ] `+ case` and `+ default` buttons, and the duplicate-case-label error.
+- [x] `+ case` and `+ default` buttons, and the duplicate-case-label error on Pixel 7a.
 - [ ] Pause and Resume in the middle of a run.
-- [ ] Level 11 solved with `.equals()` instead of `switch`.
+- [x] Level 11 solved with `.equals()` as well as with `switch` in the JVM suite.
 - [ ] Levels 12–15: build the solutions by tapping; create and delete an empty helper; edit a
       parameter argument and return value; Step into a helper and back; Reset during recursion.
 - [ ] Levels 16–18: build the solutions by tapping; add catch/finally from a nested body; delete
@@ -163,7 +175,8 @@ allocations to 512 objects, reporting Java-style errors safely.
 - [x] Level 50: use the boolean result of a short-circuiting `anyMatch()`.
 - [x] Level 51: copy elements into a route using the bound method reference `route::add`.
 - [x] Level 52: compose `map()`, `filter()` and `forEach()` to harvest while protecting sprouts.
-- [ ] Standalone functional-interface variables and other forms of method references.
+- [x] Standalone functional-interface variables, static and unbound method references, and array
+      constructor references.
 
 ## 5. Chapter 9 — Concurrency
 
@@ -182,45 +195,43 @@ and keep their own local bindings. The main farmhand performs the resulting farm
 
 ## Gaps inside finished chapters
 
-- [ ] `HashMap<String, Integer>` — the only chapter-4 collection still missing (count crops by name).
+- [x] `HashMap<String, Integer>` for counts by crop name.
 - [x] One-dimensional arrays: `new int[n]` and element writes (`row[i] = 1`).
-- [ ] Array literals and allocation/writes for multidimensional arrays.
+- [x] Int array literals and allocation and writes for two-dimensional int arrays.
 - [x] Lists: index-based `remove`, `contains`, `set`, and Java iterator behavior in for-each.
-- [ ] Strings: concatenation with `+`, `length()`, player-typed text.
-- [ ] `enum Crop` returned by the scanner instead of int codes 0/1/2.
-- [ ] `switch` fall-through as its own lesson (make `break;` removable).
+- [x] Strings: concatenation with `+`, `length()`, and player-typed text.
+- [x] Typed `Crop` and `Crop[]` scanners. Earlier lessons retain their integer scanner.
+- [x] `switch` fall-through in a dedicated lesson with optional case breaks.
 - [x] Integer `+=`, standalone `--`, `do … while`, and unlabelled `break` / `continue`.
-- [ ] Additional compound assignments such as `-=`.
-- [ ] Renaming variables (names are auto-assigned today).
+- [x] Subtraction assignment `-=` in a countdown lesson.
+- [x] Scope-aware renaming of ordinary local variables.
 
 ## Editor & UX
 
 - [x] Keep the chosen palette category on returning from an expression slot. Keep Done visible in
       slot editing and restore the previous insertion point when returning to a method.
-- [ ] Wrap long lines after `;` or `,` rather than wherever space runs out.
-- [ ] Tabs for slot choices too (numbers / variables / operators) on levels with many variables.
-- [ ] Undo / redo; move a statement up or down; copy a block.
-- [ ] Step-by-step hints, and a reference solution after repeated failures.
-- [ ] A variables panel in the debugger showing live values per scope.
+- [x] Prefer wrapping long lines after `;` or `,`.
+- [x] Tabs for typed slots with many variable choices.
+- [x] Session undo and redo, moving statements, and copying blocks.
+- [x] Stepped hints with a read-only worked solution after three failures.
+- [x] Paused debugger variables grouped by scope and farmhand.
 
 ## Game & content
 
 - [x] Original low-poly 3D garden, human farmhand, and synchronized walking, harvest, watering
       and refill animations. New Android styling and launcher mark. See [ASSETS.md](ASSETS.md).
-- [ ] Coffee as a crop (the title promises it), plus more crops and mechanics: fertiliser, growth
-      over time, obstacles.
-- [ ] Stars per level for fewest lines / fewest ticks.
-- [ ] Sound and additional farmhand animation polish.
-- [x] English and Ukrainian interface, editor controls and all 56 lessons. The level list has an
+- [x] Coffee and carrots, timed coffee growth, fertilizer, and obstacles.
+- [x] Stars for meeting reference program line and action tick targets. Personal bests persist.
+- [x] Bundled offline sounds with a mute control, and fertilizer animation.
+- [x] English and Ukrainian interface, editor controls and all 67 lessons. The level list has an
       offline language picker. Ukrainian lesson translations are bundled with stable level IDs.
 - [x] Six rotating 3D environments with distinct ground, horizons, and scenery meshes.
-- [ ] A sandbox farm with everything unlocked.
+- [x] A separate two-farmhand sandbox with all palette features available.
 
 ## Technical debt
 
-- [ ] Room (Java, no Kotlin) instead of JSON files + SharedPreferences — only if the owner still
-      wants it; the original brief allowed "Room or SQLite/JSON". Check that Room's runtime does
-      not pull in `kotlin-stdlib` before adopting it.
-- [ ] Editor UI tests (Robolectric or instrumented) — today the editor is verified only by hand.
-- [ ] Landscape / tablet layout (the app is portrait-only).
-- [ ] Release build: signing config, R8, a real launcher icon.
+- JSON and SharedPreferences are the supported offline persistence for 0.2.0. Room remains an
+  optional migration if there is a separate requirement for it.
+- [x] Java-only instrumented smoke tests for the editor and debugger.
+- [x] Landscape and tablet layout with the farm and code side by side in wide windows.
+- [x] Release signing via environment configuration, R8, and an adaptive launcher icon.

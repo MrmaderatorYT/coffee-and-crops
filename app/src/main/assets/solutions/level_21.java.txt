@@ -1,0 +1,27 @@
+class Program {
+    void run(Farmhand farmer) {
+        for (int i = 0; i < 2; i++) {
+            Worker worker = new Worker(farmer, i);
+            worker.work();
+        }
+    }
+}
+
+class Worker {
+    Farmhand farmer = null;
+    int row = 0;
+    Worker(Farmhand farmer, int row) {
+        this.farmer = farmer;
+        this.row = row;
+    }
+    void work() {
+        for (int i = 0; i < 6; i++) {
+            this.farmer.walkTo(i, this.row);
+            if (this.farmer.isRipe()) {
+                this.farmer.harvest();
+            } else if (this.farmer.isDry()) {
+                this.farmer.water();
+            }
+        }
+    }
+}

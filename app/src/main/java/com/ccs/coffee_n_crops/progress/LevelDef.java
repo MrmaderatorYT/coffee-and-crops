@@ -39,6 +39,7 @@ public final class LevelDef {
     private Supplier<Block> starter = Block::new;
     private int secondX = -1;
     private int secondY = -1;
+    private boolean sandbox;
 
     public LevelDef(String id, String title, String goalText, String hint,
                     String[] layout, int startX, int startY, Goal goal, String... unlocks) {
@@ -94,6 +95,15 @@ public final class LevelDef {
     LevelDef withStarter(Supplier<Block> starter) {
         this.starter = starter;
         return this;
+    }
+
+    LevelDef asSandbox() {
+        sandbox = true;
+        return this;
+    }
+
+    public boolean isSandbox() {
+        return sandbox;
     }
 
     /** Returns a fresh, independently editable program for a level without a saved script. */

@@ -1,0 +1,7 @@
+void run(Farmhand farmer) {
+    java.util.function.Function<Integer, Integer> absolute = Math::abs;
+    int offset = 0;
+    offset -= 3;
+    farmer.walkTo(absolute.apply(offset), 0);
+    farmer.harvest();
+}

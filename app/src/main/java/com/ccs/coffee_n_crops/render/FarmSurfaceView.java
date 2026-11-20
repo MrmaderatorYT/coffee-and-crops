@@ -23,11 +23,14 @@ public final class FarmSurfaceView extends SurfaceView implements SurfaceHolder.
     private static final long FRAME_NANOS = 1_000_000_000L / 60;
     private static final int HUD_TEXT = 0xfff3e8cd;
     private static final int HUD_GOLD = 0xffe5ad5b;
+    private static final int HUD_COFFEE = 0xffef916d;
     private static final int HUD_MINT = 0xffa8cc97;
     private static final int HUD_WATER = 0xff91c9c5;
 
     private final float density;
     private final String wheatLabel;
+    private final String coffeeLabel;
+    private final String carrotLabel;
     private final String wateredLabel;
     private final String waterLabel;
     private static final Viewpoint INITIAL_VIEW = new Viewpoint(
@@ -61,6 +64,8 @@ public final class FarmSurfaceView extends SurfaceView implements SurfaceHolder.
         super(context, attrs);
         density = getResources().getDisplayMetrics().density;
         wheatLabel = context.getString(R.string.farm_hud_wheat);
+        coffeeLabel = context.getString(R.string.farm_hud_coffee);
+        carrotLabel = context.getString(R.string.farm_hud_carrots);
         wateredLabel = context.getString(R.string.farm_hud_watered);
         waterLabel = context.getString(R.string.farm_hud_water);
         orbitGesture = new GestureDetector(context, new GestureDetector.SimpleOnGestureListener() {
@@ -192,9 +197,9 @@ public final class FarmSurfaceView extends SurfaceView implements SurfaceHolder.
         private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         private final Path path = new Path();
         private final Typeface hudFont = Typeface.create("sans-serif-medium", Typeface.NORMAL);
-        private final String[] hudLabels = new String[3];
-        private final int[] hudColors = new int[3];
-        private final float[] hudWidths = new float[3];
+        private final String[] hudLabels = new String[5];
+        private final int[] hudColors = new int[5];
+        private final float[] hudWidths = new float[5];
         private Canvas canvas;
         private Scene3d.Camera camera;
         private Viewpoint appliedView;
@@ -203,6 +208,8 @@ public final class FarmSurfaceView extends SurfaceView implements SurfaceHolder.
         private int columns;
         private int rows;
         private int harvested = -1;
+        private int coffeeHarvested = -1;
+        private int carrotsHarvested = -1;
         private int watered = -1;
         private double water = Double.NaN;
         private FarmWorld hudWorld;
@@ -256,14 +263,21 @@ public final class FarmSurfaceView extends SurfaceView implements SurfaceHolder.
 
         private void refreshHud(FarmWorld world) {
             int gathered = world.wheatHarvested(), irrigated = world.watered();
+            int coffee = world.coffeeHarvested();
+            int carrots = world.carrotsHarvested();
             double litres = world.tankLevel();
-            if (world == hudWorld && gathered == harvested && irrigated == watered && litres == water) return;
+            if (world == hudWorld && gathered == harvested && coffee == coffeeHarvested && carrots == carrotsHarvested
+                    && irrigated == watered && litres == water) return;
             hudWorld = world;
             harvested = gathered;
+            coffeeHarvested = coffee;
+            carrotsHarvested = carrots;
             watered = irrigated;
             water = litres;
             hudCount = 0;
             if (world.totalWheat() > 0) addHud(wheatLabel + "  " + gathered + "/" + world.totalWheat(), HUD_GOLD);
+            if (world.totalCoffee() > 0) addHud(coffeeLabel + "  " + coffee + "/" + world.totalCoffee(), HUD_COFFEE);
+            if (world.totalCarrots() > 0) addHud(carrotLabel + "  " + carrots + "/" + world.totalCarrots(), HUD_GOLD);
             if (world.totalGrowing() > 0) addHud(wateredLabel + "  " + irrigated + "/" + world.totalGrowing(), HUD_MINT);
             if (world.tankCapacity() > 0) addHud(waterLabel + "  " + litres + " L", HUD_WATER);
         }

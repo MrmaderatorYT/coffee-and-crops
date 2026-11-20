@@ -12,6 +12,8 @@ import android.widget.TextView;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.ccs.coffee_n_crops.lang.ast.ExprSlot;
+import com.ccs.coffee_n_crops.lang.ast.Stmt;
+import com.ccs.coffee_n_crops.lang.ast.stmt.Block;
 import com.ccs.coffee_n_crops.lang.print.Token;
 import com.ccs.coffee_n_crops.R;
 
@@ -27,6 +29,8 @@ public final class BlockAdapter extends RecyclerView.Adapter<BlockAdapter.Holder
         void onSlotTapped(ExprSlot slot);
 
         default void onFoldTapped(CodeRow row) { }
+
+        default boolean onRowLongPressed(CodeRow row) { return false; }
     }
 
     private static final int NO_NODE = -1;
@@ -133,6 +137,10 @@ public final class BlockAdapter extends RecyclerView.Adapter<BlockAdapter.Holder
         layout.setBackgroundColor(background);
         layout.setMarkerColor(marker);
         layout.setOnClickListener(v -> listener.onRowTapped(row));
+        boolean statement = (row.kind == CodeRow.Kind.STATEMENT || row.kind == CodeRow.Kind.HEADER)
+                && row.node instanceof Stmt && row.node.parent instanceof Block;
+        layout.setOnLongClickListener(statement ? v -> listener.onRowLongPressed(row) : null);
+        layout.setLongClickable(statement);
 
         if (row.kind == CodeRow.Kind.CARET) {
             layout.addView(text(context, "▸ ", SyntaxColors.AMBER));
@@ -151,6 +159,10 @@ public final class BlockAdapter extends RecyclerView.Adapter<BlockAdapter.Holder
 
         for (Token token : row.tokens) {
             TextView view = text(context, token.text, SyntaxColors.of(token.kind));
+            if (token.kind == Token.Kind.PUNCT) {
+                String punctuation = token.text.trim();
+                if (punctuation.equals(",") || punctuation.equals(";")) view.setTag(Boolean.TRUE);
+            }
             if (token.slot != null) {
                 ExprSlot slot = token.slot;
                 int padH = Ui.dp(context, 5);
@@ -160,6 +172,7 @@ public final class BlockAdapter extends RecyclerView.Adapter<BlockAdapter.Holder
                 if (slot == selectedSlot) chip.setStroke(Ui.dp(context, 2), SyntaxColors.ACCENT);
                 view.setBackground(Ui.pressable(chip));
                 view.setOnClickListener(v -> listener.onSlotTapped(slot));
+                if (statement) view.setOnLongClickListener(v -> listener.onRowLongPressed(row));
             }
             layout.addView(view);
         }
@@ -253,6 +266,8 @@ public final class BlockAdapter extends RecyclerView.Adapter<BlockAdapter.Holder
                 // Find how many tokens fit on this visual line; always take at least one.
                 int x = lineStart == 0 ? start : continuation;
                 int lineEnd = lineStart;
+                int preferredEnd = lineStart;
+                int preferredHeight = 0;
                 int lineHeight = 0;
                 int cursor = x;
                 while (lineEnd < count) {
@@ -261,6 +276,14 @@ public final class BlockAdapter extends RecyclerView.Adapter<BlockAdapter.Holder
                     cursor += child.getMeasuredWidth();
                     lineHeight = Math.max(lineHeight, child.getMeasuredHeight());
                     lineEnd++;
+                    if (Boolean.TRUE.equals(child.getTag())) {
+                        preferredEnd = lineEnd;
+                        preferredHeight = lineHeight;
+                    }
+                }
+                if (lineEnd < count && preferredEnd > lineStart) {
+                    lineEnd = preferredEnd;
+                    lineHeight = preferredHeight;
                 }
                 if (place) {
                     for (int i = lineStart; i < lineEnd; i++) {

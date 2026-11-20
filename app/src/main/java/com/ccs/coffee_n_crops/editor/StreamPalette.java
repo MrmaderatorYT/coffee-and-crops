@@ -3,6 +3,8 @@ package com.ccs.coffee_n_crops.editor;
 import com.ccs.coffee_n_crops.lang.ast.Ast;
 import com.ccs.coffee_n_crops.lang.ast.ExprSlot;
 import com.ccs.coffee_n_crops.lang.ast.expr.Binary;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionType;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionVariable;
 import com.ccs.coffee_n_crops.lang.ast.expr.Literal;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamCall.Stage;
@@ -74,6 +76,24 @@ final class StreamPalette {
         }
         if (unlocks.contains(Unlock.STREAM_ANY_MATCH)) {
             declaration(fresh("found", taken), () -> anyMatch(source, cell), out);
+        }
+        if (unlocks.contains(Unlock.FUNCTION_VALUES)) {
+            for (VarDecl variable : visible) {
+                FunctionType type = FunctionType.of(variable.type);
+                if (type == FunctionType.TRANSFORM && unlocks.contains(Unlock.STREAM_MAP)
+                        && unlocks.contains(Unlock.STREAM_FOR_EACH)) {
+                    consumer(() -> forEach(source, cell, new Stage(StageKind.MAP,
+                            new FunctionVariable(variable.name, type))), out);
+                } else if (type == FunctionType.PREDICATE && unlocks.contains(Unlock.STREAM_ANY_MATCH)) {
+                    declaration(fresh("found", taken), () -> new StreamCall(source, Terminal.ANY_MATCH,
+                            Collections.emptyList(), new FunctionVariable(variable.name, type)), out);
+                } else if (type == FunctionType.CONSUMER && unlocks.contains(Unlock.STREAM_FOR_EACH)) {
+                    Supplier<StreamCall> callback = () -> new StreamCall(source, Terminal.FOR_EACH,
+                            Collections.emptyList(), new FunctionVariable(variable.name, type));
+                    out.add(code(JavaPrinter.streamText(callback.get()) + ";", editor ->
+                            editor.insert(new ExprStmt(callback.get()))));
+                }
+            }
         }
         if (unlocks.contains(Unlock.STREAM_METHOD_REF)) {
             for (VarDecl destination : visible) {

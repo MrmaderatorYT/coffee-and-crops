@@ -1,0 +1,38 @@
+class Program {
+    void run(Farmhand farmer) {
+        Tool[] tools = new Tool[2];
+        tools[0] = new Harvester(farmer);
+        tools[1] = new Waterer(farmer);
+        for (Tool tool : tools) {
+            tool.work();
+        }
+    }
+}
+
+interface Tool {
+    void work();
+}
+
+class Harvester implements Tool {
+    Farmhand farmer = null;
+    Harvester(Farmhand farmer) {
+        this.farmer = farmer;
+    }
+    @Override
+    public void work() {
+        this.farmer.walkTo(1, 0);
+        this.farmer.harvest();
+    }
+}
+
+class Waterer implements Tool {
+    Farmhand farmer = null;
+    Waterer(Farmhand farmer) {
+        this.farmer = farmer;
+    }
+    @Override
+    public void work() {
+        this.farmer.walkTo(4, 0);
+        this.farmer.water();
+    }
+}

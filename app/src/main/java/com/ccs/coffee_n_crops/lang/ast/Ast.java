@@ -1,6 +1,7 @@
 package com.ccs.coffee_n_crops.lang.ast;
 
 import com.ccs.coffee_n_crops.farm.Direction;
+import com.ccs.coffee_n_crops.farm.Crop;
 import com.ccs.coffee_n_crops.farm.FarmWorld;
 import com.ccs.coffee_n_crops.lang.ast.expr.Binary;
 import com.ccs.coffee_n_crops.lang.ast.expr.Literal;
@@ -34,6 +35,10 @@ public final class Ast {
         return new Literal(JType.DOUBLE, value);
     }
 
+    public static Literal lit(Crop value) {
+        return new Literal(JType.CROP, value);
+    }
+
     public static Literal lit(String value) {
         return new Literal(JType.STRING, value);
     }
@@ -55,6 +60,16 @@ public final class Ast {
     /** {@code farmer.water();} */
     public static ExprStmt water() {
         return new ExprStmt(new MethodCall("farmer", "water"));
+    }
+
+    /** {@code farmer.fertilize()} */
+    public static ExprStmt fertilize() {
+        return new ExprStmt(new MethodCall("farmer", "fertilize"));
+    }
+
+    /** {@code farmer.waitOneTick()} */
+    public static ExprStmt waitOneTick() {
+        return new ExprStmt(new MethodCall("farmer", "waitOneTick"));
     }
 
     /** {@code farmer.isRipe()} */
@@ -132,6 +147,16 @@ public final class Ast {
         return new MethodCall("farmer", "getWater");
     }
 
+    /** {@code farmer.scanCrop()} */
+    public static MethodCall scanCrop() {
+        return new MethodCall("farmer", "scanCrop");
+    }
+
+    /** {@code farmer.scanCrops()} */
+    public static MethodCall scanCrops() {
+        return new MethodCall("farmer", "scanCrops");
+    }
+
     /** {@code farmer.getCrop()} */
     public static MethodCall getCrop() {
         return new MethodCall("farmer", "getCrop");
@@ -167,6 +192,7 @@ public final class Ast {
         if (type == JType.BOOLEAN) return lit(false);
         if (type == JType.DOUBLE) return lit(0.0);
         if (type == JType.STRING) return lit(FarmWorld.CROP_NAMES[0]);
+        if (type == JType.CROP) return lit(Crop.NONE);
         if (type == JType.DIRECTION) return new Literal(JType.DIRECTION, Direction.EAST);
         if (type.isReference()) return new Literal(JType.NULL, null);
         throw new IllegalArgumentException("No default value for " + type.javaName);

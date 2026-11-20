@@ -1,0 +1,12 @@
+void run(Farmhand farmer) {
+    ArrayList<Integer> stops = new ArrayList<>();
+    stops.add(1);
+    stops.add(4);
+    stops.add(6);
+    java.util.Iterator<Integer> route = stops.iterator();
+    while (route.hasNext()) {
+        int column = route.next();
+        farmer.walkTo(column, 0);
+        farmer.harvest();
+    }
+}

@@ -1,0 +1,12 @@
+void run(Farmhand farmer) {
+    try {
+        while (true) {
+            farmer.harvest();
+            farmer.move(Direction.EAST);
+        }
+    } catch (OutOfBoundsFarmException e) {
+        return;
+    } finally {
+        farmer.walkTo(0, 0);
+    }
+}

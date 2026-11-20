@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
+import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -24,8 +25,10 @@ import com.ccs.coffee_n_crops.lang.ast.stmt.Block;
 import com.ccs.coffee_n_crops.lang.check.Validator;
 import com.ccs.coffee_n_crops.lang.interp.ExecListener;
 import com.ccs.coffee_n_crops.lang.interp.Interpreter;
+import com.ccs.coffee_n_crops.lang.print.JavaPrinter;
 import com.ccs.coffee_n_crops.progress.LevelCatalog;
 import com.ccs.coffee_n_crops.progress.LevelDef;
+import com.ccs.coffee_n_crops.progress.LevelScore;
 import com.ccs.coffee_n_crops.progress.LevelTranslations;
 import com.ccs.coffee_n_crops.render.FarmSurfaceView;
 import com.ccs.coffee_n_crops.render.FarmTheme;
@@ -48,8 +51,10 @@ public final class LevelActivity extends Activity {
 
     private int levelIndex;
     private LevelDef level;
+    private FarmSounds sounds;
     private LevelTranslations translations;
     private LevelTranslations.Text lessonText;
+    private LessonHelp help;
     private FarmWorld world;
     private BlockEditorView editor;
     private TextView status;
@@ -57,6 +62,8 @@ public final class LevelActivity extends Activity {
     private Button speedButton;
     private Button nextButton;
     private Button stepTargetButton;
+    private View variablesButton;
+    private final Map<Integer, String> variableSnapshots = new HashMap<>();
     private final Map<Integer, Integer> teamNodes = new HashMap<>();
     private boolean teamActive;
     private int stepTarget = ANY_FARMHAND;
@@ -79,11 +86,14 @@ public final class LevelActivity extends Activity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_level);
+        if (FarmSounds.enabled(this)) sounds = new FarmSounds(this);
+        ResponsiveLevelLayout.apply(this);
 
         levelIndex = getIntent().getIntExtra(EXTRA_LEVEL_INDEX, 0);
         level = LevelCatalog.get(levelIndex);
         translations = AppLanguage.lessons(this);
         lessonText = translations.text(level);
+        help = new LessonHelp(this, level.id, lessonText.hint(), savedInstanceState);
         world = level.createWorld();
 
         ((TextView) findViewById(R.id.level_title)).setText(lessonText.title());
@@ -97,6 +107,9 @@ public final class LevelActivity extends Activity {
         speedButton = findViewById(R.id.btn_speed);
         nextButton = findViewById(R.id.btn_next);
         stepTargetButton = findViewById(R.id.btn_step_target);
+        variablesButton = findViewById(R.id.btn_variables);
+        variablesButton.setOnClickListener(view -> showVariables());
+        findViewById(R.id.btn_hint).setOnClickListener(view -> help.show());
 
         editor = findViewById(R.id.editor);
         editor.setUnlocks(level.unlocks);
@@ -115,7 +128,7 @@ public final class LevelActivity extends Activity {
             speedIndex = (speedIndex + 1) % SPEEDS.length;
             applySpeed();
         });
-        boolean last = levelIndex + 1 >= LevelCatalog.all().size();
+        boolean last = level.isSandbox() || levelIndex + 1 >= LevelCatalog.all().size();
         nextButton.setText(last ? R.string.btn_all_levels : R.string.btn_next_level);
         nextButton.setOnClickListener(v -> {
             if (!last) startActivity(intent(this, levelIndex + 1));
@@ -124,12 +137,25 @@ public final class LevelActivity extends Activity {
 
         applySpeed();
         setState(RunState.IDLE);
-        showStatus(lessonText.hint(), false);
+        showStatus(help.firstHint(), false);
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle state) {
+        super.onSaveInstanceState(state);
+        help.saveState(state);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (sounds != null) sounds.setActive(true);
     }
 
     @Override
     protected void onPause() {
         super.onPause();
+        if (sounds != null) sounds.setActive(false);
         if (state == RunState.RUNNING) {
             interpreter.debug.pause();
             setState(RunState.PAUSED);
@@ -142,6 +168,7 @@ public final class LevelActivity extends Activity {
         super.onDestroy();
         runGeneration++;
         interpreter.stop();
+        if (sounds != null) sounds.close();
     }
 
     // ---- debugger controls -------------------------------------------------------------------
@@ -184,12 +211,14 @@ public final class LevelActivity extends Activity {
         // The "compile" step: a program with an error never starts.
         Validator.Problem problem = Validator.check(program);
         if (problem != null) {
+            help.recordFailure();
             editor.highlight(problem.node.id, true);
             showStatus(getString(R.string.run_error, translations.message(problem.message)), true);
             return;
         }
 
         interpreter.stop();
+        variableSnapshots.clear();
         clearTeamState();
         world.reset();
         editor.clearHighlight();
@@ -205,6 +234,7 @@ public final class LevelActivity extends Activity {
     private void reset() {
         runGeneration++;
         interpreter.stop();
+        variableSnapshots.clear();
         clearTeamState();
         world.reset();
         editor.clearHighlight();
@@ -213,7 +243,7 @@ public final class LevelActivity extends Activity {
         editor.restoreEditingLocation();
         nextButton.setVisibility(View.GONE);
         setState(RunState.IDLE);
-        showStatus(lessonText.hint(), false);
+        showStatus(help.firstHint(), false);
     }
 
     private void applySpeed() {
@@ -225,10 +255,12 @@ public final class LevelActivity extends Activity {
 
     private void setState(RunState next) {
         state = next;
+        if (next == RunState.RUNNING) variableSnapshots.clear();
         playButton.setText(next == RunState.RUNNING ? R.string.btn_pause
                 : next == RunState.PAUSED ? R.string.btn_resume
                 : R.string.btn_run);
         updateStepTarget();
+        updateVariablesButton();
     }
 
     private void cycleStepTarget() {
@@ -264,6 +296,27 @@ public final class LevelActivity extends Activity {
         updateStepTarget();
     }
 
+    private void updateVariablesButton() {
+        variablesButton.setVisibility(state == RunState.PAUSED && !variableSnapshots.isEmpty()
+                ? View.VISIBLE : View.GONE);
+    }
+
+    private void showVariables() {
+        StringBuilder text = new StringBuilder();
+        for (Farmhand hand : world.farmers()) {
+            String bindings = variableSnapshots.get(hand.id);
+            if (bindings == null || stepTarget != ANY_FARMHAND && hand.id != stepTarget) continue;
+            if (text.length() > 0) text.append("\n\n");
+            if (teamActive) text.append(getString(R.string.debug_farmhand, hand.id)).append('\n');
+            text.append(bindings.isEmpty() ? getText(R.string.debug_no_variables) : bindings);
+        }
+        if (text.length() == 0) return;
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle(R.string.debug_variables)
+                .setMessage(text).setPositiveButton(android.R.string.ok, null).show();
+        TextView message = dialog.findViewById(android.R.id.message);
+        if (message != null) message.setTypeface(Typeface.MONOSPACE);
+    }
+
     private void showStatus(CharSequence message, boolean error) {
         status.setTextColor(getColor(error ? R.color.error : R.color.text_dim));
         status.setText(message);
@@ -287,17 +340,31 @@ public final class LevelActivity extends Activity {
         editor.clearHighlight();
         editor.setLocked(false);
         setState(RunState.DONE);
+        if (level.isSandbox()) {
+            showStatus(getText(R.string.sandbox_run_finished), false);
+            return;
+        }
         String missing = level.check(world, editor.getProgram());
         if (missing == null) {
-            ProgressStore.markCompleted(this, levelIndex);
-            showStatus(getText(R.string.run_success), false);
+            help.recordSuccess();
+            if (sounds != null) sounds.complete();
+            int lines = JavaPrinter.toSource(editor.getProgram()).split("\\n").length;
+            LevelScore score = ProgressStore.markCompleted(this, levelIndex, level.id, lines, world.actionTicks());
+            LevelScore.Target target = LevelBenchmarks.forLevel(this, level.id);
+            int stars = score.stars(target);
+            showStatus(target == null
+                    ? getString(R.string.run_success_score, stars, score.bestLines(), score.bestTicks())
+                    : getString(R.string.run_success_target, stars, score.bestLines(), score.bestTicks(),
+                            target.lines(), target.ticks()), false);
             nextButton.setVisibility(View.VISIBLE);
         } else {
+            help.recordFailure();
             showStatus(translations.message(missing), false);
         }
     }
 
     private void onRunFailed(int nodeId, String message) {
+        help.recordFailure();
         editor.setLocked(false);
         editor.highlight(nodeId, true);
         setState(RunState.DONE);
@@ -346,6 +413,8 @@ public final class LevelActivity extends Activity {
         @Override
         public void onTeamFarmerFinished(int farmerId) {
             post(() -> {
+                variableSnapshots.remove(farmerId);
+                updateVariablesButton();
                 teamNodes.remove(farmerId);
                 if (stepTarget == farmerId) stepTarget = ANY_FARMHAND;
                 editor.highlightTeamNode(farmerId != world.farmer.id, -1, false);
@@ -361,6 +430,19 @@ public final class LevelActivity extends Activity {
         @Override
         public void onObjectState(int farmerId, String snapshot) {
             post(() -> editor.setObjectState(snapshot));
+        }
+
+        @Override
+        public void onVariables(int farmerId, String snapshot) {
+            post(() -> {
+                variableSnapshots.put(farmerId, snapshot);
+                updateVariablesButton();
+            });
+        }
+
+        @Override
+        public void onFarmAction(Farmhand.Action action) {
+            if (sounds != null) post(() -> sounds.play(action));
         }
 
         @Override

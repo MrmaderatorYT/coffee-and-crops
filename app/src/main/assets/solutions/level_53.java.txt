@@ -1,0 +1,13 @@
+void run(Farmhand farmer) {
+    farmer.workTogether(first -> {
+        for (int i = 0; i < 3; i++) {
+            first.harvest();
+            first.move(Direction.EAST);
+        }
+    }, second -> {
+        for (int i = 0; i < 3; i++) {
+            second.harvest();
+            second.move(Direction.EAST);
+        }
+    });
+}

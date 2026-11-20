@@ -1,0 +1,8 @@
+void run(Farmhand farmer) {
+    int steps = 3;
+    while (steps > 0) {
+        farmer.harvest();
+        farmer.move(Direction.WEST);
+        steps -= 1;
+    }
+}

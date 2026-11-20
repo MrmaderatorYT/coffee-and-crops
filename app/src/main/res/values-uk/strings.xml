@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="lesson_help">Підказки до рівня</string>
+    <string name="lesson_hint_next">Наступна підказка</string>
+    <string name="lesson_hint_restart">Перша підказка</string>
+    <string name="lesson_hint_step">Підказка %1$d з %2$d</string>
+    <string name="lesson_solution">Еталонний розв’язок</string>
+    <string name="debug_variables">Змінні</string>
+    <string name="debug_farmhand">Фермер %1$d</string>
+    <string name="debug_no_variables">У цій області немає змінних</string>
     <string name="app_name">Coffee &amp; Crops</string>
     <string name="btn_run">▶ Запуск</string>
     <string name="btn_pause">❚❚ Пауза</string>
@@ -14,6 +22,10 @@
     <string name="btn_all_levels">Усі рівні</string>
     <string name="tagline">Керуй фермером за допомогою Java.</string>
     <string name="farm_hud_wheat">Пшениця</string>
+    <string name="farm_hud_coffee">Кава</string>
+    <string name="farm_hud_carrots">Морква</string>
+    <string name="farm_sound_on">Звук є</string>
+    <string name="farm_sound_off">Без звуку</string>
     <string name="farm_hud_watered">Полито</string>
     <string name="farm_hud_water">Вода</string>
     <string name="level_progress">Пройдено %1$d із %2$d рівнів</string>
@@ -26,6 +38,10 @@
     <string name="run_running">Виконується…</string>
     <string name="run_paused">Пауза. Натисни «Крок» або «Далі».</string>
     <string name="run_success">✓ Рівень пройдено</string>
+    <string name="run_success_score">✓ Рівень пройдено · %1$d/3 зірок · Найкращий результат: %2$d рядків, %3$.1f тактів дій. Поліпш результат першого проходження, щоб отримати додаткові зірки.</string>
+    <string name="run_success_target">✓ Рівень пройдено · %1$d/3 зірок · Найкращий результат: %2$d рядків, %3$.1f тактів дій. Цілі для зірок: до %4$d рядків і %5$.1f тактів дій.</string>
+    <string name="sandbox_run_finished">Виконання завершено. Скинь ферму, щоб відновити її.</string>
+    <string name="level_scored_title">%1$s · %2$s%3$s</string>
     <string name="run_error">✕ Помилка · %1$s</string>
     <string name="run_speed">×%1$d</string>
     <string name="run_speed_description">Швидкість виконання ×%1$d</string>
@@ -62,6 +78,25 @@
     <string name="editor_object_state">Об’єкти · %1$s</string>
     <string name="editor_done">✓ Готово</string>
     <string name="editor_delete">⌫ Видалити</string>
+    <string name="editor_undo">Скасувати дію</string>
+    <string name="editor_redo">Повторити дію</string>
+    <string name="editor_block_actions">Дії з блоком</string>
+    <string name="editor_move_up">Перемістити вище</string>
+    <string name="editor_move_down">Перемістити нижче</string>
+    <string name="editor_copy_block">Копіювати блок</string>
+    <string name="editor_edit_blocked">Ця зміна спричинить помилку в програмі</string>
+    <string name="editor_edit_failed">Не вдалося змінити блок</string>
+    <string name="editor_edit_text">Змінити текст</string>
+    <string name="editor_apply">Застосувати</string>
+    <string name="editor_rename_variable">Перейменувати змінну</string>
+    <string name="editor_invalid_variable">Введіть допустимий ідентифікатор Java.</string>
+    <string name="editor_name_conflict">Це ім’я спричинить конфлікт у поточній області видимості.</string>
+    <string name="editor_add_array_element">+ Елемент</string>
+    <string name="editor_remove_array_element">− Останній елемент</string>
+    <string name="editor_enable_fall_through">Прибрати break</string>
+    <string name="editor_disable_fall_through">Повернути break</string>
+    <string name="editor_tab_values">Значення</string>
+    <string name="editor_tab_expressions">Вирази</string>
     <string name="editor_remove_not">Прибрати !</string>
     <string name="editor_parameter">%1$s · параметр</string>
     <string name="editor_tab_farm">Ферма</string>

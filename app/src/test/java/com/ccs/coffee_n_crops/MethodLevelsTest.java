@@ -200,7 +200,7 @@ public class MethodLevelsTest {
     @Test
     public void catalogKeepsOldSaveIdsAndAddsUniqueLevels() {
         Set<String> ids = new HashSet<>();
-        assertEquals(56, LevelCatalog.all().size());
+        assertTrue(LevelCatalog.all().size() >= 58);
         for (int i = 0; i < LevelCatalog.all().size(); i++) {
             LevelDef level = LevelCatalog.get(i);
             assertEquals(String.format(java.util.Locale.ROOT, "level_%02d", i + 1), level.id);

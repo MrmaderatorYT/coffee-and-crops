@@ -1,0 +1,10 @@
+void run(Farmhand farmer) {
+    while (farmer.canMove(Direction.EAST)) {
+        if (farmer.isRipe()) {
+            farmer.harvest();
+        } else if (farmer.isDry()) {
+            farmer.water();
+        }
+        farmer.move(Direction.EAST);
+    }
+}

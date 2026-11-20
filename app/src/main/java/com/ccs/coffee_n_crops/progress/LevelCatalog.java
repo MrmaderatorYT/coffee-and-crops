@@ -34,10 +34,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.lang.reflect.Modifier;
 
 /** All levels in curriculum order. */
 public final class LevelCatalog {
+    public static final int SANDBOX_INDEX = -1;
     private static final List<LevelDef> LEVELS = createLevels();
+    private static final LevelDef SANDBOX = createSandbox();
 
     private static List<LevelDef> createLevels() {
         List<LevelDef> levels = new ArrayList<>(Arrays.asList(
@@ -53,6 +56,8 @@ public final class LevelCatalog {
         levels.addAll(ConcurrencyLevels.all());
         levels.addAll(StreamLevels.all());
         levels.addAll(FarmhandTeamLevels.all());
+        levels.addAll(CoffeeLevels.all());
+        levels.addAll(LanguagePracticeLevels.all());
         return Collections.unmodifiableList(levels);
     }
 
@@ -64,7 +69,26 @@ public final class LevelCatalog {
     }
 
     public static LevelDef get(int index) {
-        return LEVELS.get(index);
+        return index == SANDBOX_INDEX ? SANDBOX : LEVELS.get(index);
+    }
+
+    private static LevelDef createSandbox() {
+        // Palette additions also belong in the sandbox before they get a dedicated lesson.
+        List<String> keys = new ArrayList<>();
+        for (var field : Unlock.class.getFields()) {
+            if (field.getType() != String.class || !Modifier.isStatic(field.getModifiers())) continue;
+            try {
+                keys.add((String) field.get(null));
+            } catch (IllegalAccessException failure) {
+                throw new IllegalStateException("Cannot read an unlock key", failure);
+            }
+        }
+        return new LevelDef("sandbox", "Sandbox farm", "Experiment with every available Java block",
+                "Write any program for this farm. Reset to restore the crops and both farmhands. "
+                        + "This garden is separate from the lesson sequence.",
+                new String[]{"WW.Cc.", ".#..#R", "cg..C.", "..#..R", ".Wg.w."},
+                0, 0, (world, program) -> null, keys.toArray(new String[0]))
+                .withTank(2, 3).withSecondFarmhand(0, 4).asSandbox();
     }
 
     private static LevelDef loops() {

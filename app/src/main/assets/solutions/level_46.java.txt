@@ -1,0 +1,10 @@
+void run(Farmhand farmer) {
+    java.util.concurrent.atomic.AtomicInteger counter = new java.util.concurrent.atomic.AtomicInteger(0);
+    farmer.runTogether(() -> {
+        counter.incrementAndGet();
+    }, () -> {
+        counter.incrementAndGet();
+    });
+    farmer.walkTo(counter.get(), 0);
+    farmer.harvest();
+}

@@ -5,6 +5,8 @@ public final class Unlock {
     public static final String MOVE = "farmer.move";
     public static final String HARVEST = "farmer.harvest";
     public static final String WATER = "farmer.water";
+    public static final String FERTILIZE = "farmer.fertilize";
+    public static final String WAIT = "farmer.waitOneTick";
     public static final String IS_RIPE = "farmer.isRipe";
     public static final String FOR = "for";
     public static final String IS_DRY = "farmer.isDry";
@@ -16,6 +18,7 @@ public final class Unlock {
     /** Adding {@code else if} arms to an if statement. */
     public static final String ELSE_IF = "else if";
     public static final String SWITCH = "switch";
+    public static final String SWITCH_FALL_THROUGH = "switch-fall-through";
     /** {@code int} declarations and int variables in expressions. */
     public static final String INT = "int";
     /** {@code boolean} declarations and boolean variables in expressions. */
@@ -24,10 +27,15 @@ public final class Unlock {
     /** The water tank: {@code farmer.getWater()} and {@code farmer.refill()}. */
     public static final String TANK = "farmer.getWater";
     public static final String GET_CROP = "farmer.getCrop";
+    public static final String CROP_ENUM = "crop-enum";
     /** {@code double} declarations, literals and arithmetic. */
     public static final String DOUBLE = "double";
     /** {@code String} declarations, constants and {@code equals}. */
     public static final String STRING = "String";
+    public static final String STRING_OPERATIONS = "string-operations";
+    /** Counts indexed by text keys. */
+    public static final String HASH_MAP = "hash-map";
+    public static final String TEXT_INPUT = "text-input";
     /** {@code int[]} from {@code farmer.scanRow()}: indexing, {@code .length}, for-each over it. */
     public static final String ARRAY = "int[]";
     /** {@code int[][]} from {@code farmer.scanField()}. */
@@ -77,11 +85,15 @@ public final class Unlock {
     /** Initialized final locals and class constants. */
     public static final String CONSTANTS = "constants";
     public static final String COMPOUND_ASSIGN = "compound-assign";
+    public static final String SUBTRACT_ASSIGN = "subtract-assign";
     public static final String DECREMENT = "decrement";
     public static final String DO_WHILE = "do-while";
     public static final String BREAK = "break";
     public static final String CONTINUE = "continue";
     public static final String NEW_ARRAY = "new-array";
+    public static final String ARRAY_LITERAL = "array-literal";
+    public static final String GRID_ALLOCATION = "grid-allocation";
+    public static final String GRID_ASSIGN = "grid-assign";
     public static final String ARRAY_ASSIGN = "array-assign";
     public static final String LIST_CONTAINS = "list-contains";
     public static final String LIST_SET = "list-set";
@@ -98,6 +110,7 @@ public final class Unlock {
     public static final String STREAM_COUNT = "stream.count";
     public static final String STREAM_ANY_MATCH = "stream.anyMatch";
     public static final String STREAM_METHOD_REF = "stream.methodReference";
+    public static final String FUNCTION_VALUES = "function-values";
 
     /** Assertions with a Boolean condition and an optional message. */
     public static final String ASSERT = "assert";

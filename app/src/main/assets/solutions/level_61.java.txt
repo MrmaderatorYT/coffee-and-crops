@@ -1,0 +1,7 @@
+void run(Farmhand farmer) {
+    int[] route = new int[] {1, 3};
+    for (int column : route) {
+        farmer.walkTo(column, 0);
+        farmer.harvest();
+    }
+}

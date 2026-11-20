@@ -8,6 +8,7 @@ import com.ccs.coffee_n_crops.lang.ast.Stmt;
 import com.ccs.coffee_n_crops.lang.ast.expr.Literal;
 import com.ccs.coffee_n_crops.lang.interp.ExecutionContext;
 import com.ccs.coffee_n_crops.lang.interp.LoopJump;
+import com.ccs.coffee_n_crops.lang.interp.ScriptError;
 import com.ccs.coffee_n_crops.lang.types.JType;
 
 import java.util.ArrayList;
@@ -16,7 +17,7 @@ import java.util.List;
 
 /**
  * {@code switch (subject) { case 0: ... break; default: ... break; }} on an int or a String.
- * The editor supplies a final {@code break;} where needed, so cases cannot fall through.
+ * Cases have a final {@code break;} by default; later lessons can remove it to fall through.
  */
 public final class SwitchStmt extends Stmt {
 
@@ -25,11 +26,20 @@ public final class SwitchStmt extends Stmt {
         /** The label: a slot that accepts only a constant of the subject's type, as Java requires. */
         public final ExprSlot label;
         public final Block body = new Block();
+        private boolean fallThrough;
 
         Case(SwitchStmt owner, Object value) {
             this.parent = owner;
             this.label = ExprSlot.constant(this, owner.subject.type, new Literal(owner.subject.type, value));
             this.body.parent = this;
+        }
+
+        public boolean fallsThrough() {
+            return fallThrough;
+        }
+
+        public void setFallThrough(boolean fallThrough) {
+            this.fallThrough = fallThrough;
         }
 
         /** The label's constant: an Integer or a String. */
@@ -60,6 +70,21 @@ public final class SwitchStmt extends Stmt {
         return Collections.unmodifiableList(cases);
     }
 
+    /** Explicit blocks preserve the editor's separate local scopes in the printed Java. */
+    public boolean needsScopedArms() {
+        for (Case arm : cases) {
+            if (arm.fallsThrough() || declaresLocal(arm.body)) return true;
+        }
+        return defaultBlock != null && declaresLocal(defaultBlock);
+    }
+
+    private static boolean declaresLocal(Block body) {
+        for (Stmt statement : body.statements()) {
+            if (statement instanceof VarDecl) return true;
+        }
+        return false;
+    }
+
     /** @param value an Integer or a String, matching the subject's type */
     public Case addCase(Object value) {
         Case c = new Case(this, value);
@@ -68,7 +93,7 @@ public final class SwitchStmt extends Stmt {
     }
 
     public void removeCase(Case c) {
-        cases.remove(c);
+        if (cases.remove(c)) c.parent = null;
     }
 
     /**
@@ -80,16 +105,25 @@ public final class SwitchStmt extends Stmt {
             for (String name : FarmWorld.CROP_NAMES) {
                 if (!hasLabel(name)) return name;
             }
-            return FarmWorld.CROP_NAMES[0];
+            int next = 1;
+            while (hasLabel("crop" + next)) next++;
+            return "crop" + next;
         }
         int next = 0;
-        for (Case c : cases) next = Math.max(next, (Integer) c.value() + 1);
+        for (Case c : cases) {
+            int value = (Integer) c.value();
+            if (value != Integer.MAX_VALUE) next = Math.max(next, value + 1);
+        }
+        if (hasLabel(next)) {
+            next = 0;
+            while (hasLabel(next)) next++;
+        }
         return next;
     }
 
     private boolean hasLabel(Object value) {
         for (Case c : cases) {
-            if (c.value().equals(value)) return true;
+            if (java.util.Objects.equals(c.value(), value)) return true;
         }
         return false;
     }
@@ -108,6 +142,7 @@ public final class SwitchStmt extends Stmt {
     }
 
     public void removeDefault() {
+        if (defaultBlock != null) defaultBlock.parent = null;
         defaultBlock = null;
     }
 
@@ -124,19 +159,26 @@ public final class SwitchStmt extends Stmt {
         ctx.checkpoint(this);
         ctx.clock.awaitTicks(VarDecl.THINK_TICKS);
         Object value = subject.eval(ctx).raw; // Integer and String both compare with equals()
-        Block chosen = defaultBlock;
-        for (Case c : cases) {
-            if (c.value().equals(value)) {
-                chosen = c.body;
-                break;
-            }
-        }
-        if (chosen == null) return;
-        ctx.pushScope();
+        if (value == null) throw new ScriptError("NullPointerException");
+        int start = 0;
+        while (start < cases.size() && !value.equals(cases.get(start).value())) start++;
         try {
-            chosen.exec(ctx);
+            for (int index = start; index < cases.size(); index++) {
+                Case arm = cases.get(index);
+                executeArm(ctx, arm.body);
+                if (!arm.fallsThrough()) return;
+                if (index + 1 < cases.size() || defaultBlock != null) ctx.recordLessonUse(arm);
+            }
+            if (defaultBlock != null) executeArm(ctx, defaultBlock);
         } catch (LoopJump jump) {
             if (jump.target != this) throw jump;
+        }
+    }
+
+    private static void executeArm(ExecutionContext ctx, Block block) throws InterruptedException {
+        ctx.pushScope();
+        try {
+            block.exec(ctx);
         } finally {
             ctx.popScope();
         }

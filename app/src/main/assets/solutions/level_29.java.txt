@@ -1,0 +1,10 @@
+void run(Farmhand farmer) {
+    int[] row = new int[3];
+    row[0] = 1;
+    row[1] = 4;
+    row[2] = 6;
+    for (int cell : row) {
+        farmer.walkTo(cell, 0);
+        farmer.harvest();
+    }
+}

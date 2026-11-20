@@ -1,0 +1,11 @@
+void run(Farmhand farmer) {
+    while (farmer.canMove(Direction.EAST)) {
+        String crop = farmer.getCrop();
+        if (crop.equals("wheat")) {
+            farmer.harvest();
+        } else if (crop.equals("sprout")) {
+            farmer.water();
+        }
+        farmer.move(Direction.EAST);
+    }
+}

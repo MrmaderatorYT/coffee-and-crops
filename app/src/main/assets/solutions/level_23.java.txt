@@ -1,0 +1,8 @@
+void run(Farmhand farmer) {
+    int steps = 0;
+    while (steps < 7) {
+        farmer.walkTo(steps, 0);
+        farmer.harvest();
+        steps += 2;
+    }
+}

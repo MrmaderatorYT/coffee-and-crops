@@ -1,0 +1,6 @@
+void run(Farmhand farmer) {
+    do {
+        farmer.harvest();
+        farmer.move(Direction.EAST);
+    } while (farmer.canMove(Direction.EAST));
+}

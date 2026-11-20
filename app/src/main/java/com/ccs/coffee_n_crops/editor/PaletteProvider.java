@@ -1,6 +1,7 @@
 package com.ccs.coffee_n_crops.editor;
 
 import com.ccs.coffee_n_crops.farm.Direction;
+import com.ccs.coffee_n_crops.farm.Crop;
 import com.ccs.coffee_n_crops.farm.FarmWorld;
 import com.ccs.coffee_n_crops.lang.ast.Ast;
 import com.ccs.coffee_n_crops.lang.ast.AstWalk;
@@ -13,11 +14,19 @@ import com.ccs.coffee_n_crops.lang.ast.ClassDecl;
 import com.ccs.coffee_n_crops.lang.ast.expr.Access;
 import com.ccs.coffee_n_crops.lang.ast.expr.Binary;
 import com.ccs.coffee_n_crops.lang.ast.expr.Literal;
+import com.ccs.coffee_n_crops.lang.ast.expr.MethodCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.ListContains;
 import com.ccs.coffee_n_crops.lang.ast.expr.NewIntArray;
+import com.ccs.coffee_n_crops.lang.ast.expr.NewIntGrid;
+import com.ccs.coffee_n_crops.lang.ast.expr.IntArrayLiteral;
 import com.ccs.coffee_n_crops.lang.ast.expr.NewList;
 import com.ccs.coffee_n_crops.lang.ast.expr.Not;
 import com.ccs.coffee_n_crops.lang.ast.expr.StrEquals;
+import com.ccs.coffee_n_crops.lang.ast.expr.CropEquals;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringConcat;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringLength;
+import com.ccs.coffee_n_crops.lang.ast.expr.NewStringIntMap;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringIntMapCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.VarRef;
 import com.ccs.coffee_n_crops.lang.ast.expr.UserCall;
 import com.ccs.coffee_n_crops.lang.ast.stmt.ArrayAssign;
@@ -69,6 +78,11 @@ public final class PaletteProvider {
     private static final String[] ELEMENT_NAMES = {"cell", "item", "value"};
     private static final String[] DOUBLE_NAMES = {"amount", "level", "liters"};
     private static final String[] STRING_NAMES = {"crop", "name", "kind"};
+    private static final int DEFAULT_GRID_ROWS = 2;
+    private static final int DEFAULT_GRID_COLUMNS = 3;
+    private static final String GRID_CREATION = "new int[" + DEFAULT_GRID_ROWS + "][" + DEFAULT_GRID_COLUMNS + "]";
+    private static final String ARRAY_LITERAL = "new int[] {0, 1}";
+    private static final String[] MAP_NAMES = {"counts", "harvests", "inventory"};
     private static final String[] VOID_METHOD_NAMES = {"harvestRow", "work", "tend"};
     private static final String[] RECURSIVE_METHOD_NAMES = {"walkToEdge", "harvestRow", "work"};
     private static final String[] VALUE_METHOD_NAMES = {"countRipe", "countTiles", "measure"};
@@ -138,6 +152,10 @@ public final class PaletteProvider {
         SwitchStmt enclosingSwitch = owner instanceof SwitchStmt.Case ? (SwitchStmt) owner.parent
                 : owner instanceof SwitchStmt ? (SwitchStmt) owner : null;
         if (enclosingSwitch != null) {
+            if (unlocks.contains(Unlock.SWITCH_FALL_THROUGH) && owner instanceof SwitchStmt.Case arm) {
+                String toggle = arm.fallsThrough() ? BlockSpec.DISABLE_FALL_THROUGH : BlockSpec.ENABLE_FALL_THROUGH;
+                out.add(command(toggle, e -> e.mutate(() -> arm.setFallThrough(!arm.fallsThrough()))));
+            }
             Object label = enclosingSwitch.nextLabel();
             String text = JavaPrinter.literalText(enclosingSwitch.subject.type, label);
             out.add(command("+ case " + text + ":", e -> e.mutate(() ->
@@ -189,6 +207,12 @@ public final class PaletteProvider {
         }
         if (cursor.classDecl == null && unlocks.contains(Unlock.WATER)) {
             farmer.add(code("farmer.water();", e -> e.insert(Ast.water())));
+        }
+        if (cursor.classDecl == null && unlocks.contains(Unlock.FERTILIZE)) {
+            farmer.add(code("farmer.fertilize();", e -> e.insert(Ast.fertilize())));
+        }
+        if (cursor.classDecl == null && unlocks.contains(Unlock.WAIT)) {
+            farmer.add(code("farmer.waitOneTick();", e -> e.insert(Ast.waitOneTick())));
         }
         if (cursor.classDecl == null && unlocks.contains(Unlock.TANK)) {
             farmer.add(code("farmer.refill();", e -> e.insert(Ast.refill())));
@@ -245,6 +269,11 @@ public final class PaletteProvider {
         boolean enhancedFor = !StreamPalette.enabled(unlocks) || unlocks.contains(Unlock.FOR_EACH);
         for (VarDecl v : visible) {
             // One for-each block per array or list that can be iterated here.
+            if (enhancedFor && v.type == JType.CROP_ARRAY && unlocks.contains(Unlock.CROP_ENUM)) {
+                String crop = freeName(STRING_NAMES, taken);
+                loops.add(code("for (Crop " + crop + " : " + v.name + ") { }",
+                        e -> e.insert(new ForEachStmt(JType.CROP, crop, v.name))));
+            }
             if (enhancedFor && (v.type == JType.INT_ARRAY || v.type == JType.INT_LIST)) {
                 String name = freeName(ELEMENT_NAMES, taken);
                 loops.add(code("for (int " + name + " : " + v.name + ") { }",
@@ -293,6 +322,16 @@ public final class PaletteProvider {
             data.add(code("int[] " + name + " = new int[" + DEFAULT_ARRAY_LENGTH + "];",
                     e -> e.insert(new VarDecl(JType.INT_ARRAY, name, newArray()))));
         }
+        if (unlocks.contains(Unlock.ARRAY_LITERAL)) {
+            String name = freeName(ARRAY_NAMES, taken);
+            data.add(code("int[] " + name + " = " + ARRAY_LITERAL + ";",
+                    e -> e.insert(new VarDecl(JType.INT_ARRAY, name, defaultArrayLiteral()))));
+        }
+        if (unlocks.contains(Unlock.GRID_ALLOCATION)) {
+            String name = freeName(GRID_NAMES, taken);
+            data.add(code("int[][] " + name + " = " + GRID_CREATION + ";",
+                    e -> e.insert(new VarDecl(JType.INT_GRID, name, defaultGrid()))));
+        }
         if (unlocks.contains(Unlock.GRID)) {
             String name = freeName(GRID_NAMES, taken);
             data.add(code("int[][] " + name + " = farmer.scanField();", e -> e.insert(Ast.scanField(name))));
@@ -303,6 +342,7 @@ public final class PaletteProvider {
                     e -> e.insert(Ast.newList(name))));
         }
         addCollectionEdits(unlocks, visible, data);
+        if (unlocks.contains(Unlock.HASH_MAP)) addMapStatements(visible, taken, data);
         ModernCollectionPalette.statements(unlocks, visible, taken, data, loops, logic);
         if (unlocks.contains(Unlock.INT)) {
             String name = freeName(INT_NAMES, taken);
@@ -311,6 +351,14 @@ public final class PaletteProvider {
         if (unlocks.contains(Unlock.DOUBLE)) {
             String name = freeName(DOUBLE_NAMES, taken);
             data.add(code("double " + name + " = 0.0;", e -> e.insert(Ast.declare(JType.DOUBLE, name))));
+        }
+        if (unlocks.contains(Unlock.CROP_ENUM) && cursor.classDecl == null) {
+            String crop = freeName(STRING_NAMES, taken);
+            data.add(code("Crop " + crop + " = farmer.scanCrop();",
+                    e -> e.insert(new VarDecl(JType.CROP, crop, Ast.scanCrop()))));
+            String crops = freeName(new String[]{"crops", "cropRow"}, taken);
+            data.add(code("Crop[] " + crops + " = farmer.scanCrops();",
+                    e -> e.insert(new VarDecl(JType.CROP_ARRAY, crops, Ast.scanCrops()))));
         }
         if (unlocks.contains(Unlock.STRING)) {
             String name = freeName(STRING_NAMES, taken);
@@ -345,6 +393,10 @@ public final class PaletteProvider {
             if (unlocks.contains(Unlock.COMPOUND_ASSIGN)) {
                 data.add(code(name + " += 1;", e -> e.insert(new CompoundAssign(name, Ast.lit(1)))));
             }
+            if (unlocks.contains(Unlock.SUBTRACT_ASSIGN)) {
+                data.add(code(name + " -= 1;", e -> e.insert(
+                        new CompoundAssign(name, CompoundAssign.Operation.SUBTRACT, Ast.lit(1)))));
+            }
             if (unlocks.contains(Unlock.DECREMENT)) {
                 data.add(code(name + "--;", e -> e.insert(new DecrementStmt(name))));
             }
@@ -355,6 +407,7 @@ public final class PaletteProvider {
         file(logic, BlockSpec.TAB_LOGIC, out);
         file(data, BlockSpec.TAB_DATA, out);
         StreamPalette.statements(unlocks, visible, taken, out);
+        if (unlocks.contains(Unlock.FUNCTION_VALUES)) FunctionPalette.statements(visible, taken, out);
         methodChoices(cursor, unlocks, program, visible, taken, out);
         exceptionChoices(unlocks, visible, out);
         OopPalette.statements(cursor, unlocks, program, out);
@@ -414,8 +467,45 @@ public final class PaletteProvider {
         }
     }
 
+    private static void addMapReads(ExprSlot slot, List<VarDecl> visible, List<BlockSpec> out) {
+        for (VarDecl variable : visible) {
+            if (variable.type != JType.STRING_INT_MAP) continue;
+            String map = variable.name;
+            if (slot.type == JType.INT) {
+                out.add(code(map + ".getOrDefault(\"wheat\", 0)", e -> e.mutate(() -> slot.set(
+                        new StringIntMapCall(map, StringIntMapCall.Op.GET_OR_DEFAULT,
+                                Ast.lit(FarmWorld.CROP_NAMES[0]), Ast.lit(0))))));
+                out.add(code(map + ".size()", e -> e.mutate(() -> slot.set(
+                        new StringIntMapCall(map, StringIntMapCall.Op.SIZE)))));
+            } else if (slot.type == JType.BOOLEAN) {
+                out.add(code(map + ".containsKey(\"wheat\")", e -> e.mutate(() -> slot.set(
+                        new StringIntMapCall(map, StringIntMapCall.Op.CONTAINS_KEY, Ast.lit(FarmWorld.CROP_NAMES[0]))))));
+            }
+        }
+    }
+
+    private static void addMapStatements(List<VarDecl> visible, Set<String> taken, List<BlockSpec> out) {
+        String name = freeName(MAP_NAMES, taken);
+        out.add(code(JType.STRING_INT_MAP.javaName + " " + name + " = new java.util.HashMap<>();",
+                e -> e.insert(new VarDecl(JType.STRING_INT_MAP, name, new NewStringIntMap()))));
+        for (VarDecl variable : visible) {
+            if (variable.type != JType.STRING_INT_MAP) continue;
+            String map = variable.name;
+            out.add(code(map + ".put(\"wheat\", 1);", e -> e.insert(new ExprStmt(
+                    new StringIntMapCall(map, StringIntMapCall.Op.PUT, Ast.lit(FarmWorld.CROP_NAMES[0]), Ast.lit(1))))));
+        }
+    }
+
     private static NewIntArray newArray() {
         return new NewIntArray(Ast.lit(DEFAULT_ARRAY_LENGTH));
+    }
+
+    private static IntArrayLiteral defaultArrayLiteral() {
+        return new IntArrayLiteral(Ast.lit(0), Ast.lit(1));
+    }
+
+    private static NewIntGrid defaultGrid() {
+        return new NewIntGrid(Ast.lit(DEFAULT_GRID_ROWS), Ast.lit(DEFAULT_GRID_COLUMNS));
     }
 
     private static void addCollectionEdits(Set<String> unlocks, List<VarDecl> visible, List<BlockSpec> data) {
@@ -426,6 +516,10 @@ public final class PaletteProvider {
             if (variable.type == JType.INT_ARRAY && unlocks.contains(Unlock.ARRAY_ASSIGN)) {
                 data.add(code(name + "[" + index + "] = 0;",
                         e -> e.insert(new ArrayAssign(name, intOrZero(ints, 0), Ast.lit(0)))));
+            }
+            if (variable.type == JType.INT_GRID && unlocks.contains(Unlock.GRID_ASSIGN)) {
+                data.add(code(name + "[0][" + index + "] = 0;",
+                        e -> e.insert(new ArrayAssign(name, Ast.lit(0), intOrZero(ints, 0), Ast.lit(0)))));
             }
             if (variable.type != JType.INT_LIST) continue;
             data.add(code(name + ".add(" + index + ");",
@@ -641,8 +735,11 @@ public final class PaletteProvider {
                 || unlocks.contains(Unlock.SWITCH) || unlocks.contains(Unlock.MATH)
                 || unlocks.contains(Unlock.ARRAY) || unlocks.contains(Unlock.GRID)
                 || unlocks.contains(Unlock.LIST) || unlocks.contains(Unlock.DOUBLE)
-                || unlocks.contains(Unlock.STRING) || unlocks.contains(Unlock.METHODS)
-                || unlocks.contains(Unlock.CLASSES) || unlocks.contains(Unlock.NEW_ARRAY)
+                || unlocks.contains(Unlock.STRING) || unlocks.contains(Unlock.STRING_OPERATIONS)
+                || unlocks.contains(Unlock.HASH_MAP) || unlocks.contains(Unlock.CROP_ENUM)
+                || unlocks.contains(Unlock.FUNCTION_VALUES) || unlocks.contains(Unlock.METHODS)
+                || unlocks.contains(Unlock.CLASSES) || unlocks.contains(Unlock.NEW_ARRAY) || unlocks.contains(Unlock.ARRAY_LITERAL)
+                || unlocks.contains(Unlock.GRID_ALLOCATION) || unlocks.contains(Unlock.GRID_ASSIGN)
                 || unlocks.contains(Unlock.ARRAY_ASSIGN) || unlocks.contains(Unlock.LIST_CONTAINS)
                 || unlocks.contains(Unlock.LIST_SET) || unlocks.contains(Unlock.LIST_REMOVE)
                 || unlocks.contains(Unlock.COMPOUND_ASSIGN) || unlocks.contains(Unlock.DECREMENT)
@@ -672,6 +769,12 @@ public final class PaletteProvider {
                 if (slot.constantOnly) break; // a case label must be a constant: no variables, no operators
                 variableChoices(slot, visible, out);
                 collectionReads(slot, visible, out);
+                if (unlocks.contains(Unlock.STRING_OPERATIONS)) {
+                    String name = firstOfType(visible, JType.STRING);
+                    String preview = name == null ? "\"wheat\"" : name;
+                    out.add(code(preview + ".length()", e -> e.mutate(() -> slot.set(
+                            new StringLength(name == null ? Ast.lit(FarmWorld.CROP_NAMES[0]) : new VarRef(name))))));
+                }
                 if (unlocks.contains(Unlock.MATH)) {
                     out.add(command("▢ + 1", e -> e.mutate(() ->
                             slot.set(new Binary(Binary.Op.ADD, slot.get(), Ast.lit(1))))));
@@ -701,6 +804,14 @@ public final class PaletteProvider {
                             e -> e.mutate(() -> slot.set(Ast.canMove(Direction.EAST)))));
                 }
                 variableChoices(slot, visible, out);
+                if (unlocks.contains(Unlock.CROP_ENUM)) {
+                    String name = firstOfType(visible, JType.CROP);
+                    if (name != null || globalFarmer) {
+                        String preview = name == null ? "farmer.scanCrop()" : name;
+                        out.add(code(preview + " == Crop.WHEAT", e -> e.mutate(() -> slot.set(
+                                new CropEquals(name == null ? Ast.scanCrop() : new VarRef(name), Ast.lit(Crop.WHEAT))))));
+                    }
+                }
                 if (unlocks.contains(Unlock.LIST_CONTAINS)) addListContainsChoices(slot, visible, out);
                 if (unlocks.contains(Unlock.LOGIC)) {
                     out.add(command("▢ == ▢", e -> e.mutate(() ->
@@ -765,7 +876,16 @@ public final class PaletteProvider {
                 for (String name : FarmWorld.CROP_NAMES) {
                     out.add(code("\"" + name + "\"", e -> e.mutate(() -> slot.set(Ast.lit(name)))));
                 }
+                if (unlocks.contains(Unlock.TEXT_INPUT)) {
+                    out.add(command(BlockSpec.EDIT_TEXT, BlockEditorView::editStringSlot));
+                }
                 if (slot.constantOnly) break; // a case label must be a constant
+                if (unlocks.contains(Unlock.STRING_OPERATIONS)) {
+                    out.add(command("▢ + \"\"", e -> e.mutate(() -> slot.set(
+                            new StringConcat(slot.get(), JType.STRING, Ast.lit(""))))));
+                    out.add(command("▢ + 1", e -> e.mutate(() -> slot.set(
+                            new StringConcat(slot.get(), JType.INT, Ast.lit(1))))));
+                }
                 if (globalFarmer && unlocks.contains(Unlock.GET_CROP)) {
                     out.add(code("farmer.getCrop()", e -> e.mutate(() -> slot.set(Ast.getCrop()))));
                 }
@@ -778,12 +898,50 @@ public final class PaletteProvider {
                 if (unlocks.contains(Unlock.NEW_ARRAY)) {
                     out.add(code("new int[" + DEFAULT_ARRAY_LENGTH + "]", e -> e.mutate(() -> slot.set(newArray()))));
                 }
+                if (unlocks.contains(Unlock.ARRAY_LITERAL)) {
+                    if (current instanceof IntArrayLiteral array) {
+                        if (array.canAppend()) out.add(command(BlockSpec.ADD_ARRAY_ELEMENT,
+                                e -> e.mutate(() -> array.append(Ast.lit(0)))));
+                        if (!array.elements().isEmpty()) out.add(command(BlockSpec.REMOVE_ARRAY_ELEMENT,
+                                e -> e.mutate(array::removeLast)));
+                    } else {
+                        out.add(code(ARRAY_LITERAL, e -> e.mutate(() -> slot.set(defaultArrayLiteral()))));
+                    }
+                }
                 variableChoices(slot, visible, out);
                 break;
 
             case "INT_GRID":
-                if (globalFarmer) out.add(code("farmer.scanField()", e -> e.mutate(() ->
+                if (globalFarmer && unlocks.contains(Unlock.GRID)) out.add(code("farmer.scanField()", e -> e.mutate(() ->
                         slot.set(Ast.scanField("").init.get()))));
+                if (unlocks.contains(Unlock.GRID_ALLOCATION)) {
+                    out.add(code(GRID_CREATION, e -> e.mutate(() -> slot.set(defaultGrid()))));
+                }
+                variableChoices(slot, visible, out);
+                break;
+
+            case "CROP":
+                if (unlocks.contains(Unlock.CROP_ENUM)) {
+                    for (Crop crop : Crop.values()) {
+                        out.add(code(JavaPrinter.literalText(JType.CROP, crop), e -> e.mutate(() -> slot.set(Ast.lit(crop)))));
+                    }
+                    if (globalFarmer) out.add(code("farmer.scanCrop()", e -> e.mutate(() -> slot.set(Ast.scanCrop()))));
+                    collectionReads(slot, visible, out);
+                    variableChoices(slot, visible, out);
+                }
+                break;
+
+            case "CROP_ARRAY":
+                if (globalFarmer && unlocks.contains(Unlock.CROP_ENUM)) {
+                    out.add(code("farmer.scanCrops()", e -> e.mutate(() -> slot.set(Ast.scanCrops()))));
+                }
+                variableChoices(slot, visible, out);
+                break;
+
+            case "STRING_INT_MAP":
+                if (unlocks.contains(Unlock.HASH_MAP)) {
+                    out.add(code("new java.util.HashMap<>()", e -> e.mutate(() -> slot.set(new NewStringIntMap()))));
+                }
                 variableChoices(slot, visible, out);
                 break;
 
@@ -794,6 +952,10 @@ public final class PaletteProvider {
 
             default:
                 break;
+        }
+        if (!slot.constantOnly && unlocks.contains(Unlock.HASH_MAP)) addMapReads(slot, visible, out);
+        if (!slot.constantOnly && unlocks.contains(Unlock.FUNCTION_VALUES)) {
+            FunctionPalette.slots(slot, visible, namesInMethod(slot.owner, program), out);
         }
         OopPalette.slots(slot, unlocks, program, out);
         ModernCollectionPalette.slots(slot, unlocks, visible, out);
@@ -830,7 +992,7 @@ public final class PaletteProvider {
         List<String> ints = intNames(visible);
         for (VarDecl v : visible) {
             for (Access.Kind kind : Access.Kind.values()) {
-                if (kind.target != v.type) continue;
+                if (kind.target != v.type || kind.resultType != slot.type) continue;
                 out.add(code(JavaPrinter.accessText(kind, v.name), e -> e.mutate(() -> {
                     // Index with the loop counters in scope; a grid takes [outer][inner].
                     Expr[] args = new Expr[kind.argCount];
@@ -915,7 +1077,7 @@ public final class PaletteProvider {
     }
 
     /** Java does not allow two locals with one name in a method, so each new variable gets a fresh one. */
-    private static String freeName(String[] pool, Set<String> taken) {
+    static String freeName(String[] pool, Set<String> taken) {
         for (String name : pool) {
             if (!taken.contains(name)) return name;
         }

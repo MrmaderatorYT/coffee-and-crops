@@ -1,0 +1,9 @@
+void run(Farmhand farmer) {
+    for (int i = 0; i < 8; i++) {
+        farmer.walkTo(i, 0);
+        if (!farmer.isRipe()) {
+            continue;
+        }
+        farmer.harvest();
+    }
+}

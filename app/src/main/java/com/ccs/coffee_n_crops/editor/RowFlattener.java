@@ -152,13 +152,15 @@ public final class RowFlattener {
     }
 
     private static void switchArms(SwitchStmt stmt, int depth, EditorCursor cursor, List<CodeRow> out) {
+        boolean scoped = stmt.needsScopedArms();
         for (SwitchStmt.Case c : stmt.cases()) {
-            out.add(new CodeRow(Kind.MID, depth + 1, null, JavaPrinter.caseLine(c), c.body, 0));
-            caseBody(c.body, depth + 2, cursor, out);
+            out.add(new CodeRow(Kind.MID, depth + 1, null, JavaPrinter.caseLine(c, scoped), c.body, 0));
+            caseBody(c.body, !c.fallsThrough(), scoped, depth + 2, cursor, out);
         }
         if (stmt.defaultBlock() != null) {
-            out.add(new CodeRow(Kind.MID, depth + 1, null, JavaPrinter.defaultLine(), stmt.defaultBlock(), 0));
-            caseBody(stmt.defaultBlock(), depth + 2, cursor, out);
+            out.add(new CodeRow(Kind.MID, depth + 1, null, JavaPrinter.defaultLine(scoped),
+                    stmt.defaultBlock(), 0));
+            caseBody(stmt.defaultBlock(), true, scoped, depth + 2, cursor, out);
         }
     }
 
@@ -175,11 +177,14 @@ public final class RowFlattener {
         }
     }
 
-    /** A fixed break is needed only if the arm can reach its end without returning. */
-    private static void caseBody(Block body, int depth, EditorCursor cursor, List<CodeRow> out) {
+    private static void caseBody(Block body, boolean hasBreak, boolean scoped, int depth,
+                                 EditorCursor cursor, List<CodeRow> out) {
         walk(body, depth, cursor, out);
-        if (ControlFlow.completesNormally(body)) {
+        if (hasBreak && ControlFlow.completesNormally(body)) {
             out.add(new CodeRow(Kind.MID, depth, null, JavaPrinter.breakLine(), body, body.size()));
+        }
+        if (scoped) {
+            out.add(new CodeRow(Kind.MID, depth - 1, null, JavaPrinter.closeBrace(), body, body.size()));
         }
     }
 

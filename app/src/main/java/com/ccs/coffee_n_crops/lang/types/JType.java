@@ -15,9 +15,16 @@ public final class JType {
     public static final JType BOOLEAN = builtin("BOOLEAN", "boolean");
     public static final JType STRING = builtin("STRING", "String");
     public static final JType DIRECTION = builtin("DIRECTION", "Direction");
+    public static final JType CROP = builtin("CROP", "Crop");
+    public static final JType CROP_ARRAY = builtin("CROP_ARRAY", "Crop[]");
     public static final JType INT_ARRAY = builtin("INT_ARRAY", "int[]");
     public static final JType INT_GRID = builtin("INT_GRID", "int[][]");
     public static final JType INT_LIST = builtin("INT_LIST", "ArrayList<Integer>");
+    public static final JType INTEGER_FUNCTION = builtin("INTEGER_FUNCTION", "java.util.function.Function<Integer, Integer>");
+    public static final JType INTEGER_PREDICATE = builtin("INTEGER_PREDICATE", "java.util.function.Predicate<Integer>");
+    public static final JType INTEGER_CONSUMER = builtin("INTEGER_CONSUMER", "java.util.function.Consumer<Integer>");
+    public static final JType INT_ARRAY_FACTORY = builtin("INT_ARRAY_FACTORY", "java.util.function.IntFunction<int[]>");
+    public static final JType STRING_INT_MAP = builtin("STRING_INT_MAP", "java.util.HashMap<String, Integer>");
     public static final JType ATOMIC_INTEGER = builtin("ATOMIC_INTEGER", "java.util.concurrent.atomic.AtomicInteger");
     public static final JType REENTRANT_LOCK = builtin("REENTRANT_LOCK", "java.util.concurrent.locks.ReentrantLock");
     public static final JType INT_ITERATOR = builtin("INT_ITERATOR", "java.util.Iterator<Integer>");

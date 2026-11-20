@@ -1,0 +1,9 @@
+void run(Farmhand farmer) {
+    while (farmer.canMove(Direction.EAST)) {
+        if (farmer.getWater() < 0.5) {
+            farmer.refill();
+        }
+        farmer.water();
+        farmer.move(Direction.EAST);
+    }
+}

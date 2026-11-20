@@ -95,7 +95,7 @@ public final class StreamCall extends Expr {
     private static Value apply(ExecutionContext ctx, StreamCallback.Bound callback, int element) {
         try {
             ctx.checkActive();
-            return callback.apply(element);
+            return callback.apply(ctx, element);
         } catch (InterruptedException interrupted) {
             throw new InterruptedCallback(interrupted);
         }

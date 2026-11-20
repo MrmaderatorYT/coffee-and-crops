@@ -1,0 +1,11 @@
+void run(Farmhand farmer) {
+    ArrayList<Integer> list = new ArrayList<>();
+    list.add(1);
+    list.add(2);
+    list.add(5);
+    list.set(1, 3);
+    for (int cell : list) {
+        farmer.walkTo(cell, 0);
+        farmer.harvest();
+    }
+}

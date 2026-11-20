@@ -1,0 +1,10 @@
+void run(Farmhand farmer) {
+    ArrayList<Integer> stops = new ArrayList<>();
+    stops.add(1);
+    stops.add(3);
+    stops.add(5);
+    stops.stream().forEach(cell -> {
+        farmer.walkTo(cell, 0);
+        farmer.harvest();
+    });
+}

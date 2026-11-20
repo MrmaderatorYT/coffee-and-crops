@@ -1,0 +1,13 @@
+void run(Farmhand farmer) {
+    walkToEdge(farmer);
+}
+
+void walkToEdge(Farmhand farmer) {
+    if (farmer.isRipe()) {
+        farmer.harvest();
+    }
+    if (farmer.canMove(Direction.EAST)) {
+        farmer.move(Direction.EAST);
+        walkToEdge(farmer);
+    }
+}

@@ -23,10 +23,19 @@ public final class DebugController {
 
     /** A canceled worker must not consume a step belonging to a newly started run. */
     void awaitPermission(BooleanSupplier active, int farmerId) throws InterruptedException {
+        awaitPermission(active, farmerId, () -> { });
+    }
+
+    void awaitPermission(BooleanSupplier active, int farmerId, Runnable onWait) throws InterruptedException {
         lock.lockInterruptibly();
         try {
+            boolean reported = false;
             while (paused && (stepPermits == 0 || stepFarmer != ANY_FARMER && stepFarmer != farmerId)
                     && active.getAsBoolean()) {
+                if (!reported) {
+                    onWait.run();
+                    reported = true;
+                }
                 resumed.await();
             }
             if (!active.getAsBoolean()) throw new InterruptedException();

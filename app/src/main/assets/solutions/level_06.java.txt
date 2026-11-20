@@ -1,0 +1,15 @@
+void run(Farmhand farmer) {
+    for (int i = 0; i < 9; i++) {
+        switch (i % 3) {
+            case 0:
+                farmer.harvest();
+                break;
+            case 1:
+                farmer.water();
+                break;
+            default:
+                break;
+        }
+        farmer.move(Direction.EAST);
+    }
+}

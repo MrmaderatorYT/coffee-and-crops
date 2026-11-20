@@ -1,0 +1,6 @@
+void run(Farmhand farmer) {
+    java.util.Optional<Integer> stop = java.util.Optional.empty();
+    int column = stop.orElse(3);
+    farmer.walkTo(column, 0);
+    farmer.harvest();
+}

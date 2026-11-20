@@ -1,0 +1,9 @@
+void run(Farmhand farmer) {
+    int[][] field = new int[2][1];
+    field[0][0] = 1;
+    field[1][0] = 2;
+    for (int i = 0; i < field.length; i++) {
+        farmer.walkTo(field[i][0], i);
+        farmer.harvest();
+    }
+}

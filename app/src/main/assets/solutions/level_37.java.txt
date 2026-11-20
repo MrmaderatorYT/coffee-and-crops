@@ -1,0 +1,14 @@
+class Program {
+    void run(Farmhand farmer) {
+        Object object = new Harvester();
+        if (object instanceof Harvester) {
+            farmer.harvest();
+        }
+    }
+}
+
+class Harvester {
+}
+
+class Waterer {
+}

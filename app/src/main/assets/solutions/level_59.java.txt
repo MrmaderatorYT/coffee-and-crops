@@ -1,0 +1,6 @@
+void run(Farmhand farmer) {
+    String label = "whe" + "at";
+    if (label.length() == 5) {
+        farmer.harvest();
+    }
+}

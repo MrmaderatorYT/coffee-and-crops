@@ -1,0 +1,34 @@
+class Program {
+    void run(Farmhand farmer) {
+        final Counter counter = new Counter();
+        final java.util.concurrent.locks.ReentrantLock gate = new java.util.concurrent.locks.ReentrantLock();
+        farmer.workTogether(first -> {
+            for (int i = 0; i < 3; i++) {
+                first.harvest();
+                gate.lock();
+                try {
+                    counter.total = counter.total + 1;
+                } finally {
+                    gate.unlock();
+                }
+                first.move(Direction.EAST);
+            }
+        }, second -> {
+            for (int i = 0; i < 3; i++) {
+                second.harvest();
+                gate.lock();
+                try {
+                    counter.total = counter.total + 1;
+                } finally {
+                    gate.unlock();
+                }
+                second.move(Direction.EAST);
+            }
+        });
+        assert counter.total == 6 : "Expected one count for each crop";
+    }
+}
+
+class Counter {
+    int total = 0;
+}

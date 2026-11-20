@@ -63,6 +63,8 @@ final class TeamPalette {
         List<VarDecl> visible = ScopeResolver.visibleAt(cursor.block, cursor.index);
         if (unlocks.contains(Unlock.HARVEST)) farmAction(() -> new MethodCall(farmhand.name, "harvest"), out);
         if (unlocks.contains(Unlock.WATER)) farmAction(() -> new MethodCall(farmhand.name, "water"), out);
+        if (unlocks.contains(Unlock.FERTILIZE)) farmAction(() -> new MethodCall(farmhand.name, "fertilize"), out);
+        if (unlocks.contains(Unlock.WAIT)) farmAction(() -> new MethodCall(farmhand.name, "waitOneTick"), out);
         if (unlocks.contains(Unlock.MOVE)) farmAction(() -> new MethodCall(farmhand.name, "move",
                 new Literal(JType.DIRECTION, Direction.EAST)), out);
         if (unlocks.contains(Unlock.WALK_TO)) {

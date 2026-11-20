@@ -523,6 +523,8 @@ final class OopPalette {
         for (Target farmer : farmhandTargets(cursor.classDecl, visible)) {
             if (unlocks.contains(Unlock.HARVEST)) out.add(code(farmer.label + ".harvest();", e -> e.insert(new ExprStmt(nativeCall(farmer, "harvest")))).inTab(BlockSpec.TAB_FARM));
             if (unlocks.contains(Unlock.WATER)) out.add(code(farmer.label + ".water();", e -> e.insert(new ExprStmt(nativeCall(farmer, "water")))).inTab(BlockSpec.TAB_FARM));
+            if (unlocks.contains(Unlock.FERTILIZE)) out.add(code(farmer.label + ".fertilize();", e -> e.insert(new ExprStmt(nativeCall(farmer, "fertilize")))).inTab(BlockSpec.TAB_FARM));
+            if (unlocks.contains(Unlock.WAIT)) out.add(code(farmer.label + ".waitOneTick();", e -> e.insert(new ExprStmt(nativeCall(farmer, "waitOneTick")))).inTab(BlockSpec.TAB_FARM));
             if (unlocks.contains(Unlock.MOVE)) out.add(code(farmer.label + ".move(Direction.EAST);", e -> e.insert(new ExprStmt(nativeCall(farmer, "move", new Literal(JType.DIRECTION, com.ccs.coffee_n_crops.farm.Direction.EAST))))).inTab(BlockSpec.TAB_FARM));
             if (unlocks.contains(Unlock.WALK_TO)) {
                 String x = "0";

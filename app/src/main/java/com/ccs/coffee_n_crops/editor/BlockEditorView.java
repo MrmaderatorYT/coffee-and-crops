@@ -3,15 +3,18 @@ package com.ccs.coffee_n_crops.editor;
 import android.content.Context;
 import android.app.AlertDialog;
 import android.graphics.Typeface;
+import android.text.InputType;
 import android.text.TextUtils;
 import android.util.AttributeSet;
 import android.view.Gravity;
+import android.view.WindowManager;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.EditText;
 import android.widget.Spinner;
 import android.widget.ArrayAdapter;
+import android.widget.Toast;
 import android.text.method.ScrollingMovementMethod;
 
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -31,10 +34,14 @@ import com.ccs.coffee_n_crops.lang.ast.stmt.Block;
 import com.ccs.coffee_n_crops.lang.ast.stmt.IfStmt;
 import com.ccs.coffee_n_crops.lang.ast.stmt.SwitchStmt;
 import com.ccs.coffee_n_crops.lang.ast.stmt.VarDecl;
+import com.ccs.coffee_n_crops.lang.check.ScopeResolver;
+import com.ccs.coffee_n_crops.lang.print.Token;
 import com.ccs.coffee_n_crops.lang.runtime.ClassTable;
 import com.ccs.coffee_n_crops.lang.types.JType;
 import com.ccs.coffee_n_crops.progress.Unlock;
 import com.ccs.coffee_n_crops.R;
+
+import org.json.JSONException;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,6 +51,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.HashSet;
+import java.util.function.Predicate;
 
 /**
  * The block code editor: a list of real Java lines on top, a context-sensitive block palette below.
@@ -60,14 +68,20 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
     /** Up to this many code blocks are shown as one row, without tabs. */
     private static final int MAX_UNTABBED = 5;
     private static final int OBJECT_STATE_LINES = 4;
+    private static final int MIN_VARIABLE_TAB_CHOICES = 3;
+    private static final String TAB_VALUES = "Values";
+    private static final String TAB_EXPRESSIONS = "Expressions";
 
     private final EditorCursor cursor = new EditorCursor();
+    private final EditorHistory history = new EditorHistory();
     private final BlockAdapter adapter = new BlockAdapter(this);
     private final RecyclerView list;
     private final LinearLayout palette;
     private final HorizontalScrollView paletteScroller;
     private final LinearLayout callActions;
     private final LinearLayout paletteActions;
+    private final TextView undoButton;
+    private final TextView redoButton;
     private final MethodNavigationView methodNavigation;
     private final ClassMemberNavigationView classMemberNavigation;
     private final LinearLayout classBar;
@@ -83,6 +97,7 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
     private ExprSlot paletteSlot;
     private int statementPaletteScroll;
     private String statementPaletteTab;
+    private String slotPaletteTab = TAB_VALUES;
     /** The row of tabs above the palette; hidden when the choices are few enough for one row. */
     private final LinearLayout tabStrip;
     private final LinearLayout tabBar;
@@ -194,6 +209,8 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
         paletteBar.addView(paletteActions);
         addView(paletteBar, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
 
+        undoButton = historyButton("↶", R.string.editor_undo, false);
+        redoButton = historyButton("↷", R.string.editor_redo, true);
         cursor.moveTo(program, 0);
         refresh();
     }
@@ -202,6 +219,7 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
 
     public void setProgram(Block program) {
         this.program = program;
+        history.clear();
         editingClass = null;
         editingBlock = null;
         selectedClass = null;
@@ -301,6 +319,7 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
 
     public void insert(Stmt stmt) {
         if (locked || cursor.slot != null) return;
+        EditorHistory.Snapshot before = captureEdit();
         cursor.block.add(cursor.index, stmt);
         List<Block> children = stmt.childBlocks();
         if (children.isEmpty()) {
@@ -308,17 +327,18 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
         } else {
             cursor.moveTo(children.get(0), 0); // keep building inside the new loop or branch
         }
-        changed();
+        changed(before);
     }
 
     /** Adds a helper alongside run and opens its empty body for editing. */
     public void addMethod(MethodDecl method) {
         if (locked || cursor.slot != null) return;
+        EditorHistory.Snapshot before = captureEdit();
         rememberBodyPosition();
         program.addMethod(method);
         cursor.moveTo(method.body, 0);
         selectedTab = BlockSpec.TAB_FARM;
-        changed();
+        changed(before);
         scrollToCaret();
     }
 
@@ -413,22 +433,25 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
     /** Adds a declaration in the class structure rather than in a method body. */
     public void addField(VarDecl field) {
         if (locked || selectedClass == null || selectedClass.isInterface) return;
+        EditorHistory.Snapshot before = captureEdit();
         selectedClass.addField(field);
-        memberAdded(field);
+        memberAdded(field, before);
     }
 
     public void addConstructor(ConstructorDecl constructor) {
         if (locked || selectedClass == null || selectedClass.isInterface || selectedClass.constructor() != null) return;
+        EditorHistory.Snapshot before = captureEdit();
         selectedClass.setConstructor(constructor);
-        memberAdded(constructor);
+        memberAdded(constructor, before);
     }
 
     public void addConstructorParameter(VarDecl parameter) {
         if (locked) return;
         for (Node node = cursor.block; node != null; node = node.parent) {
             if (node instanceof ConstructorDecl) {
+                EditorHistory.Snapshot before = captureEdit();
                 ((ConstructorDecl) node).addParameter(parameter);
-                changed();
+                changed(before);
                 return;
             }
         }
@@ -436,13 +459,14 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
 
     public void addInstanceMethod(MethodDecl method) {
         if (locked || selectedClass == null) return;
+        EditorHistory.Snapshot before = captureEdit();
         selectedClass.addMethod(method);
-        memberAdded(method);
+        memberAdded(method, before);
     }
 
-    private void memberAdded(Node member) {
+    private void memberAdded(Node member, EditorHistory.Snapshot before) {
         focusClassMember(member);
-        changed();
+        changed(before);
         scrollToDeclaration(member);
     }
 
@@ -460,24 +484,25 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
     /** Removes the statement before the cursor, like Backspace in a text editor. */
     public void backspace() {
         if (locked) return;
+        EditorHistory.Snapshot before = captureEdit();
         if (cursor.declaration instanceof VarDecl && cursor.declaration.parent instanceof ClassDecl) {
             ((ClassDecl) cursor.declaration.parent).removeField((VarDecl) cursor.declaration);
             cursor.slot = null;
             cursor.declaration = selectedClass;
-            changed();
+            changed(before);
             return;
         }
         if (cursor.declaration instanceof MethodDecl && selectedClass != null && selectedClass.isInterface) {
             selectedClass.removeMethod((MethodDecl) cursor.declaration);
             cursor.selectClassStructure(program, selectedClass);
-            changed();
+            changed(before);
             return;
         }
         if (cursor.declaration instanceof ClassDecl) {
             ClassDecl cls = (ClassDecl) cursor.declaration;
             if (cls.fields().isEmpty() && cls.constructor() == null && cls.methods().isEmpty()) program.removeClass(cls);
             selectClass(null);
-            changed();
+            changed(before);
             return;
         }
         if (cursor.index > 0) {
@@ -488,14 +513,15 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
         } else {
             return;
         }
-        changed();
+        changed(before);
     }
 
     /** Applies a palette edit to the program (e.g. filling the selected slot) and redraws. */
     public void mutate(Runnable edit) {
         if (locked) return;
+        EditorHistory.Snapshot before = captureEdit();
         edit.run();
-        changed();
+        changed(before);
     }
 
     /** Adds to the number in the selected slot. Does nothing unless the slot holds an int literal. */
@@ -504,8 +530,44 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
         Literal literal = (Literal) cursor.slot.get();
         if (literal.type != JType.INT) return;
         int next = (Integer) literal.value + delta;
-        literal.value = Math.max(MIN_INT, Math.min(MAX_INT, next));
-        changed();
+        int clamped = Math.max(MIN_INT, Math.min(MAX_INT, next));
+        if (clamped != (Integer) literal.value) mutate(() -> literal.value = clamped);
+    }
+
+    /** Opens the keyboard for a String expression selected in the editor. */
+    public void editStringSlot() {
+        ExprSlot slot = cursor.slot;
+        if (locked || slot == null || slot.type != JType.STRING) return;
+        String text = slot.get() instanceof Literal literal && literal.value instanceof String value ? value : "";
+        editTextDialog(R.string.editor_edit_text, text, input -> {
+            if (!locked && cursor.slot == slot) mutate(() -> slot.set(Ast.lit(input.getText().toString())));
+            return true;
+        });
+    }
+
+    private void editTextDialog(int title, String text, Predicate<EditText> apply) {
+        AlertDialog.Builder builder = new AlertDialog.Builder(getContext());
+        Context context = builder.getContext();
+        EditText input = new EditText(context);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
+        input.setSingleLine();
+        input.setHint(title);
+        input.setText(text);
+        input.setSelectAllOnFocus(true);
+        LinearLayout form = new LinearLayout(context);
+        int padding = Ui.dp(context, 24);
+        form.setPadding(padding, Ui.dp(context, 12), padding, Ui.dp(context, 8));
+        form.addView(input, new LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT));
+        AlertDialog dialog = builder.setTitle(title).setView(form)
+                .setNegativeButton(R.string.editor_cancel, null).setPositiveButton(R.string.editor_apply, null).create();
+        dialog.setOnShowListener(unused -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            if (apply.test(input)) dialog.dismiss();
+        }));
+        input.requestFocus();
+        if (dialog.getWindow() != null) {
+            dialog.getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
+        }
+        dialog.show();
     }
 
     public void closeSlot() {
@@ -558,6 +620,83 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
         if (locked) return;
         cursor.slot = slot;
         refresh();
+    }
+
+    @Override
+    public boolean onRowLongPressed(CodeRow row) {
+        if (locked || !(row.node instanceof Stmt statement) || !(statement.parent instanceof Block block)) return false;
+        int position = block.indexOf(statement);
+        if (position < 0) return false;
+        Block owner = program;
+        List<BlockSpec> actions = new ArrayList<>();
+        if (statement instanceof VarDecl declaration) {
+            actions.add(new BlockSpec(getContext().getString(R.string.editor_rename_variable), true,
+                    editor -> editor.renameVariable(owner, block, declaration)));
+        }
+        if (position > 0) {
+            actions.add(new BlockSpec(getContext().getString(R.string.editor_move_up), true,
+                    editor -> editor.editStatement(owner, block, statement, -1)));
+        }
+        if (position < block.size() - 1) {
+            actions.add(new BlockSpec(getContext().getString(R.string.editor_move_down), true,
+                    editor -> editor.editStatement(owner, block, statement, 1)));
+        }
+        actions.add(new BlockSpec(getContext().getString(R.string.editor_copy_block), true,
+                editor -> editor.editStatement(owner, block, statement, 0)));
+        // Keep a confirmation for Copy even when it is the only action.
+        showChoiceDialog(R.string.editor_block_actions, actions);
+        return true;
+    }
+
+    private void renameVariable(Block owner, Block block, VarDecl declaration) {
+        editTextDialog(R.string.editor_rename_variable, declaration.name, input -> {
+            if (locked || program != owner || declaration.parent != block) return true;
+            String name = input.getText().toString().trim();
+            if (name.equals(declaration.name)) return true;
+            if (!LocalRename.validName(name)) {
+                input.setError(getContext().getString(R.string.editor_invalid_variable));
+                return false;
+            }
+            int position = block.indexOf(declaration);
+            EditorHistory.Snapshot before = captureEdit();
+            try {
+                if (!LocalRename.apply(program, block, position, name)) {
+                    input.setError(getContext().getString(R.string.editor_name_conflict));
+                    return false;
+                }
+            } catch (JSONException invalidRename) {
+                showEditFailure();
+                return false;
+            }
+            cursor.moveTo(block, position + 1);
+            changed(before);
+            scrollToCaret();
+            return true;
+        });
+    }
+
+    private void editStatement(Block owner, Block block, Stmt statement, int direction) {
+        if (locked || program != owner || ClassTable.programOf(block) != program || statement.parent != block) return;
+        int from = block.indexOf(statement);
+        int to = direction == 0 ? from + 1 : from + direction;
+        if (from < 0 || to < 0 || (direction != 0 && to >= block.size())) return;
+        EditorHistory.Snapshot before = captureEdit();
+        String failure;
+        try {
+            failure = direction == 0 ? StatementEdits.copy(program, block, from)
+                    : StatementEdits.move(program, block, from, to);
+        } catch (JSONException invalidCopy) {
+            showEditFailure();
+            return;
+        }
+        if (failure != null) {
+            new AlertDialog.Builder(getContext()).setTitle(R.string.editor_edit_blocked)
+                    .setMessage(failure).setPositiveButton(android.R.string.ok, null).show();
+            return;
+        }
+        cursor.moveTo(block, to + 1);
+        changed(before);
+        scrollToCaret();
     }
 
     // ---- internals ---------------------------------------------------------------------------
@@ -651,10 +790,102 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
         cursor.moveTo(block, index);
     }
 
-    private void changed() {
+    private EditorHistory.Snapshot captureEdit() {
+        try {
+            return EditorHistory.capture(program, selectedClass, cursor, selectedTab, foldedMembers);
+        } catch (JSONException invalidSnapshot) {
+            return null;
+        }
+    }
+
+    private void changed(EditorHistory.Snapshot before) {
+        try {
+            history.record(before, program);
+        } catch (JSONException invalidSnapshot) {
+            history.clear();
+        }
+        notifyChanged();
+    }
+
+    private void notifyChanged() {
         adapter.clearHighlight();
         refresh();
         if (onChange != null) onChange.onProgramChanged();
+    }
+
+    private TextView historyButton(String symbol, int description, boolean redo) {
+        TextView button = navigationChip(symbol, false);
+        button.setContentDescription(getContext().getString(description));
+        button.setTextSize(19f);
+        button.setMinWidth(Ui.dp(getContext(), 44));
+        button.setPadding(Ui.dp(getContext(), 6), 0, Ui.dp(getContext(), 6), 0);
+        button.setOnClickListener(v -> restoreHistory(redo));
+        return button;
+    }
+
+    private void restoreHistory(boolean redo) {
+        if (locked) return;
+        EditorHistory.Snapshot current = captureEdit();
+        if (current == null) {
+            showEditFailure();
+            return;
+        }
+        EditorHistory.Snapshot next = history.take(redo, current);
+        if (next == null) return;
+        try {
+            program = next.program();
+        } catch (JSONException invalidSnapshot) {
+            history.clear();
+            refresh();
+            showEditFailure();
+            return;
+        }
+        List<Node> nodes = EditorHistory.nodes(program);
+        selectedClass = EditorHistory.nodeAt(nodes, next.cls()) instanceof ClassDecl cls ? cls : null;
+        Block block = EditorHistory.nodeAt(nodes, next.block()) instanceof Block saved ? saved : program;
+        cursor.moveTo(block, Math.min(next.index(), block.size()));
+        cursor.classDecl = selectedClass;
+        cursor.declaration = EditorHistory.nodeAt(nodes, next.declaration());
+        foldedMembers.clear();
+        for (int index : next.folded()) foldedMembers.add(nodes.get(index).id);
+        Node expression = EditorHistory.nodeAt(nodes, next.expression());
+        if (expression != null) {
+            for (CodeRow row : codeRows(false)) {
+                for (Token token : row.tokens) {
+                    if (token.slot != null && token.slot.get() == expression) cursor.slot = token.slot;
+                }
+            }
+        }
+        bodyPositions.clear();
+        editingClass = null;
+        editingBlock = null;
+        selectedTab = next.tab();
+        paletteSlot = null;
+        setObjectState(null);
+        notifyChanged();
+        if (cursor.slot != null) {
+            for (Node owner = cursor.slot.owner; owner != null; owner = owner.parent) {
+                if (adapter.positionOf(owner.id) >= 0) {
+                    scrollToDeclaration(owner);
+                    break;
+                }
+            }
+        } else if (cursor.declaration != null) {
+            scrollToDeclaration(cursor.declaration);
+        } else {
+            scrollToCaret();
+        }
+    }
+
+    private void showEditFailure() {
+        Toast.makeText(getContext(), R.string.editor_edit_failed, Toast.LENGTH_SHORT).show();
+    }
+
+    private List<CodeRow> codeRows(boolean showCaret) {
+        EditorCursor visible = showCaret ? cursor : null;
+        return unlocks.contains(Unlock.CLASSES)
+                ? RowFlattener.flattenClass(program, selectedClass, visible, foldedMembers)
+                : RowFlattener.flatten(program, visible);
     }
 
     private void refresh() {
@@ -665,8 +896,7 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
         newInterface.setVisibility(unlocks.contains(Unlock.INTERFACES) ? VISIBLE : GONE);
         if (classes) rebuildClassTabs();
         refreshClassPanel(classes ? selectedClass : null);
-        adapter.submit(classes ? RowFlattener.flattenClass(program, selectedClass, showCaret ? cursor : null, foldedMembers)
-                : RowFlattener.flatten(program, showCaret ? cursor : null), cursor.slot);
+        adapter.submit(codeRows(showCaret), cursor.slot);
         rebuildPalette();
     }
 
@@ -767,6 +997,7 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
                 .setTitle(interfaceType ? R.string.editor_new_interface : R.string.editor_new_class).setView(form)
                 .setNegativeButton(R.string.editor_cancel, null).setPositiveButton(R.string.editor_create, null).create();
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE).setOnClickListener(v -> {
+            if (locked) return;
             String value = name.getText().toString().trim();
             if (!value.matches("[A-Z][A-Za-z0-9_]*") || names.contains(value)) {
                 name.setError(context.getString(interfaceType ? R.string.editor_invalid_interface : R.string.editor_invalid_class));
@@ -775,10 +1006,11 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
             String parent = canExtend && base.getSelectedItemPosition() > 0
                     ? bases.get(base.getSelectedItemPosition()) : null;
             ClassDecl cls = interfaceType ? new ClassDecl(value, true) : new ClassDecl(value, parent);
+            EditorHistory.Snapshot before = captureEdit();
             program.addClass(cls);
             selectClass(cls);
             selectedTab = BlockSpec.TAB_OBJECTS;
-            changed();
+            changed(before);
             dialog.dismiss();
         }));
         dialog.show();
@@ -791,6 +1023,7 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
         ExprSlot activeSlot = cursor.slot;
         paletteSlot = activeSlot;
         if (previousSlot == null && activeSlot != null) statementPaletteScroll = currentScroll;
+        if (previousSlot != activeSlot && activeSlot != null) slotPaletteTab = TAB_VALUES;
 
         palette.removeAllViews();
         callActions.removeAllViews();
@@ -822,6 +1055,7 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
             methodNavigation.showMethods(program.methods(), helperAt(location), !creations.isEmpty(), locked);
         }
         if (!calls.isEmpty()) showQuickCalls(calls);
+        if (activeSlot != null) categorizeSlotChoices(standard, activeSlot);
 
         // Tabs are worth their row only when there is more than one group and too much for one row.
         List<String> tabs = new ArrayList<>();
@@ -834,8 +1068,10 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
         boolean tabbed = tabs.size() > 1 && filed > MAX_UNTABBED;
         pinnedCommands.removeAllViews();
         tabBar.setVisibility(tabbed ? VISIBLE : GONE);
-        String activeTab = tabbed ? (tabs.contains(selectedTab) ? selectedTab : tabs.get(0)) : null;
+        String preferredTab = activeSlot == null ? selectedTab : slotPaletteTab;
+        String activeTab = tabbed ? (tabs.contains(preferredTab) ? preferredTab : tabs.get(0)) : null;
         renderTabs(tabbed ? tabs : Collections.emptyList(), activeTab);
+        showHistoryButtons(tabbed ? pinnedCommands : paletteActions);
 
         Context context = getContext();
         for (BlockSpec spec : standard) {
@@ -861,6 +1097,38 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
                 if (paletteRevision == revision) paletteScroller.scrollTo(restore, 0);
             });
         }
+    }
+
+    private void showHistoryButtons(LinearLayout container) {
+        if (!history.canUndo() && !history.canRedo()) return;
+        undoButton.setEnabled(!locked && history.canUndo());
+        redoButton.setEnabled(!locked && history.canRedo());
+        undoButton.setAlpha(undoButton.isEnabled() ? 1f : 0.42f);
+        redoButton.setAlpha(redoButton.isEnabled() ? 1f : 0.42f);
+        container.addView(undoButton, chipParams(getContext()));
+        container.addView(redoButton, chipParams(getContext()));
+    }
+
+    private void categorizeSlotChoices(List<BlockSpec> specs, ExprSlot slot) {
+        Set<String> variables = new HashSet<>();
+        for (VarDecl local : ScopeResolver.visibleAt(slot)) variables.add(local.name);
+        long choices = specs.stream().filter(spec -> variables.contains(spec.label)).count();
+        if (choices < MIN_VARIABLE_TAB_CHOICES) return;
+        for (int i = 0; i < specs.size(); i++) {
+            BlockSpec spec = specs.get(i);
+            if (spec.pinned || BlockSpec.DONE.equals(spec.label)) continue;
+            String tab = variables.contains(spec.label) ? BlockSpec.TAB_DATA
+                    : isValueChoice(spec.label) ? TAB_VALUES : TAB_EXPRESSIONS;
+            specs.set(i, spec.inTab(tab));
+        }
+    }
+
+    private static boolean isValueChoice(String label) {
+        if (label.isEmpty()) return false;
+        char first = label.charAt(0);
+        return Character.isDigit(first) || first == '"' || label.startsWith("Direction.")
+                || label.equals("true") || label.equals("false") || label.equals("null")
+                || label.equals(BlockSpec.EDIT_TEXT) || label.equals("− 1") || label.equals("+ 1");
     }
 
     private void renderTabs(List<String> tabs, String activeTab) {
@@ -913,6 +1181,10 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
             choices.get(0).action.apply(this);
             return;
         }
+        showChoiceDialog(title, choices);
+    }
+
+    private void showChoiceDialog(int title, List<BlockSpec> choices) {
         Block ownerProgram = program;
         ClassDecl ownerClass = selectedClass;
         CharSequence[] labels = new CharSequence[choices.size()];
@@ -930,9 +1202,10 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
     private TextView tabView(String tab, boolean open) {
         TextView view = navigationChip(tabLabel(tab), open);
         view.setOnClickListener(v -> {
-            if (locked || tab.equals(selectedTab)) return;
-            selectedTab = tab;
-            if (!open) paletteScroller.scrollTo(0, 0);
+            if (locked || open) return;
+            if (cursor.slot == null) selectedTab = tab;
+            else slotPaletteTab = tab;
+            paletteScroller.scrollTo(0, 0);
             rebuildPalette();
         });
         return view;
@@ -940,6 +1213,8 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
 
     private String tabLabel(String tab) {
         int label = switch (tab) {
+            case TAB_VALUES -> R.string.editor_tab_values;
+            case TAB_EXPRESSIONS -> R.string.editor_tab_expressions;
             case BlockSpec.TAB_FARM -> R.string.editor_tab_farm;
             case BlockSpec.TAB_LOOPS -> R.string.editor_tab_loops;
             case BlockSpec.TAB_LOGIC -> R.string.editor_tab_conditions;
@@ -983,6 +1258,11 @@ public final class BlockEditorView extends LinearLayout implements BlockAdapter.
             case BlockSpec.DONE -> getContext().getString(R.string.editor_done);
             case BlockSpec.DELETE -> getContext().getString(R.string.editor_delete);
             case BlockSpec.REMOVE_NOT -> getContext().getString(R.string.editor_remove_not);
+            case BlockSpec.EDIT_TEXT -> getContext().getString(R.string.editor_edit_text);
+            case BlockSpec.ADD_ARRAY_ELEMENT -> getContext().getString(R.string.editor_add_array_element);
+            case BlockSpec.REMOVE_ARRAY_ELEMENT -> getContext().getString(R.string.editor_remove_array_element);
+            case BlockSpec.ENABLE_FALL_THROUGH -> getContext().getString(R.string.editor_enable_fall_through);
+            case BlockSpec.DISABLE_FALL_THROUGH -> getContext().getString(R.string.editor_disable_fall_through);
             default -> spec.label.endsWith(BlockSpec.PARAMETER_SUFFIX)
                     ? getContext().getString(R.string.editor_parameter, spec.label.substring(0,
                             spec.label.length() - BlockSpec.PARAMETER_SUFFIX.length()))

@@ -27,6 +27,11 @@ public final class BlockSpec {
     public static final String TAB_OBJECTS = "Objects";
     public static final String TAB_THREADS = "Threads";
     public static final String TAB_STREAMS = "Streams";
+    public static final String EDIT_TEXT = "Edit text";
+    public static final String ENABLE_FALL_THROUGH = "Remove break";
+    public static final String DISABLE_FALL_THROUGH = "Restore break";
+    public static final String ADD_ARRAY_ELEMENT = "+ Element";
+    public static final String REMOVE_ARRAY_ELEMENT = "− Last element";
     public static final String DONE = "✓ Done";
     public static final String DELETE = "⌫ Delete";
     public static final String REMOVE_NOT = "remove !";

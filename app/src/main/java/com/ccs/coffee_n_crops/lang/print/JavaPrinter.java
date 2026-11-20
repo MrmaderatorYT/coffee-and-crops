@@ -30,8 +30,14 @@ import com.ccs.coffee_n_crops.lang.ast.expr.CollectionCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamCallback;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamLambda;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionValue;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionCall;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionVariable;
+import com.ccs.coffee_n_crops.lang.ast.expr.IntegerMethodRef;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamMethodRef;
 import com.ccs.coffee_n_crops.lang.ast.expr.NewIntArray;
+import com.ccs.coffee_n_crops.lang.ast.expr.NewIntGrid;
+import com.ccs.coffee_n_crops.lang.ast.expr.IntArrayLiteral;
 import com.ccs.coffee_n_crops.lang.ast.expr.NewObjectArray;
 import com.ccs.coffee_n_crops.lang.ast.expr.ObjectArrayGet;
 import com.ccs.coffee_n_crops.lang.ast.stmt.ArrayAssign;
@@ -39,6 +45,11 @@ import com.ccs.coffee_n_crops.lang.ast.stmt.ObjectArrayAssign;
 import com.ccs.coffee_n_crops.lang.ast.expr.Not;
 import com.ccs.coffee_n_crops.lang.ast.expr.PostIncrement;
 import com.ccs.coffee_n_crops.lang.ast.expr.StrEquals;
+import com.ccs.coffee_n_crops.lang.ast.expr.CropEquals;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringConcat;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringLength;
+import com.ccs.coffee_n_crops.lang.ast.expr.NewStringIntMap;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringIntMapCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.UserCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.VarRef;
 import com.ccs.coffee_n_crops.lang.ast.stmt.Assign;
@@ -278,20 +289,20 @@ public final class JavaPrinter {
     }
 
     /** {@code case N:} */
-    public static List<Token> caseLine(SwitchStmt.Case c) {
+    public static List<Token> caseLine(SwitchStmt.Case c, boolean scoped) {
         List<Token> out = new ArrayList<>();
         add(out, "case", Kind.KEYWORD);
         add(out, " ", Kind.PUNCT);
         slot(c.label, out, PREC_NONE, false);
-        add(out, ":", Kind.PUNCT);
+        add(out, scoped ? ": {" : ":", Kind.PUNCT);
         return out;
     }
 
     /** {@code default:} */
-    public static List<Token> defaultLine() {
+    public static List<Token> defaultLine(boolean scoped) {
         List<Token> out = new ArrayList<>();
         add(out, "default", Kind.KEYWORD);
-        add(out, ":", Kind.PUNCT);
+        add(out, scoped ? ": {" : ":", Kind.PUNCT);
         return out;
     }
 
@@ -408,10 +419,10 @@ public final class JavaPrinter {
             add(out, ";", Kind.PUNCT);
         } else if (stmt instanceof ArrayAssign) {
             ArrayAssign assignment = (ArrayAssign) stmt;
-            arrayAssignment(assignment.name, assignment.index, assignment.value, out);
+            arrayAssignment(assignment.name, assignment.index, assignment.column, assignment.value, out);
         } else if (stmt instanceof ObjectArrayAssign) {
             ObjectArrayAssign assignment = (ObjectArrayAssign) stmt;
-            arrayAssignment(assignment.name, assignment.index, assignment.value, out);
+            arrayAssignment(assignment.name, assignment.index, null, assignment.value, out);
         } else if (stmt instanceof ListAdd) {
             ListAdd add = (ListAdd) stmt;
             listMutation(add.name, "add", out, add.value);
@@ -432,7 +443,7 @@ public final class JavaPrinter {
         } else if (stmt instanceof CompoundAssign) {
             CompoundAssign assignment = (CompoundAssign) stmt;
             add(out, assignment.name, Kind.IDENT);
-            add(out, " += ", Kind.OPERATOR);
+            add(out, " " + assignment.operation.symbol + " ", Kind.OPERATOR);
             slot(assignment.value, out, PREC_NONE, false);
             add(out, ";", Kind.PUNCT);
         } else if (stmt instanceof DecrementStmt) {
@@ -555,13 +566,16 @@ public final class JavaPrinter {
                 indent(sb, depth).append("}\n");
             } else if (stmt instanceof SwitchStmt) {
                 SwitchStmt s = (SwitchStmt) stmt;
+                boolean scoped = s.needsScopedArms();
                 for (SwitchStmt.Case c : s.cases()) {
-                    indent(sb, depth + 1).append(text(caseLine(c))).append('\n');
-                    appendCaseBody(c.body, depth + 2, sb);
+                    indent(sb, depth + 1).append(text(caseLine(c, scoped))).append('\n');
+                    appendCaseBody(c.body, !c.fallsThrough(), depth + 2, sb);
+                    if (scoped) indent(sb, depth + 1).append("}\n");
                 }
                 if (s.defaultBlock() != null) {
-                    indent(sb, depth + 1).append(text(defaultLine())).append('\n');
-                    appendCaseBody(s.defaultBlock(), depth + 2, sb);
+                    indent(sb, depth + 1).append(text(defaultLine(scoped))).append('\n');
+                    appendCaseBody(s.defaultBlock(), true, depth + 2, sb);
+                    if (scoped) indent(sb, depth + 1).append("}\n");
                 }
                 indent(sb, depth).append("}\n");
             } else if (stmt instanceof DoWhileStmt) {
@@ -575,9 +589,9 @@ public final class JavaPrinter {
         }
     }
 
-    private static void appendCaseBody(Block body, int depth, StringBuilder sb) {
+    private static void appendCaseBody(Block body, boolean hasBreak, int depth, StringBuilder sb) {
         appendBlock(body, depth, sb);
-        if (ControlFlow.completesNormally(body)) {
+        if (hasBreak && ControlFlow.completesNormally(body)) {
             indent(sb, depth).append(text(breakLine())).append('\n');
         }
     }
@@ -625,10 +639,29 @@ public final class JavaPrinter {
             objectExpression(e, s, out);
         } else if (e instanceof Literal) {
             Literal lit = (Literal) e;
-            Kind kind = lit.type == JType.DIRECTION ? Kind.CONSTANT
+            Kind kind = lit.type == JType.DIRECTION || lit.type == JType.CROP ? Kind.CONSTANT
                     : lit.type == JType.BOOLEAN ? Kind.KEYWORD
                     : lit.type == JType.STRING ? Kind.STRING : Kind.NUMBER;
             out.add(new Token(literalText(lit.type, lit.value), kind, s));
+        } else if (e instanceof StringConcat concat) {
+            slot(concat.left, out, prec, false);
+            out.add(new Token(" + ", Kind.OPERATOR, s));
+            slot(concat.right, out, prec, true);
+        } else if (e instanceof NewStringIntMap) {
+            out.add(new Token("new java.util.HashMap<>()", Kind.TYPE, s));
+        } else if (e instanceof StringIntMapCall call) {
+            mapCall(call, s, out);
+        } else if (e instanceof FunctionValue function) {
+            callbackTokens(function.callback, s, out);
+        } else if (e instanceof FunctionCall function) {
+            functionCall(function, s, out);
+        } else if (e instanceof StringLength length) {
+            slot(length.text, out, PREC_PRIMARY, false);
+            out.add(new Token(".length()", Kind.METHOD, s));
+        } else if (e instanceof CropEquals comparison) {
+            slot(comparison.left, out, prec, false);
+            out.add(new Token(" == ", Kind.OPERATOR, s));
+            slot(comparison.right, out, prec, true);
         } else if (e instanceof StrEquals) {
             // left.equals(right): the method name selects the whole comparison.
             StrEquals eq = (StrEquals) e;
@@ -651,6 +684,19 @@ public final class JavaPrinter {
             slot(b.right, out, prec, true);
         } else if (e instanceof NewList) {
             out.add(new Token("new ArrayList<>()", Kind.TYPE, s));
+        } else if (e instanceof NewIntGrid grid) {
+            arrayCreation(JType.INT, grid.rows, s, out);
+            add(out, "[", Kind.PUNCT);
+            slot(grid.columns, out, PREC_NONE, false);
+            add(out, "]", Kind.PUNCT);
+        } else if (e instanceof IntArrayLiteral array) {
+            out.add(new Token("new int[]", Kind.TYPE, s));
+            add(out, " {", Kind.PUNCT);
+            for (int i = 0; i < array.elements().size(); i++) {
+                if (i > 0) add(out, ", ", Kind.PUNCT);
+                slot(array.elements().get(i), out, PREC_NONE, false);
+            }
+            add(out, "}", Kind.PUNCT);
         } else if (e instanceof NewIntArray) {
             arrayCreation(JType.INT, ((NewIntArray) e).length, s, out);
         } else if (e instanceof NewObjectArray) {
@@ -697,8 +743,9 @@ public final class JavaPrinter {
     public static String literalText(JType type, Object value) {
         if (value == null) return "null";
         if (type == JType.LONG) return value + "L";
-        if (type == JType.STRING) return "\"" + value + "\"";
+        if (type == JType.STRING) return stringLiteral((String) value);
         if (type == JType.DIRECTION) return "Direction." + value;
+        if (type == JType.CROP) return "Crop." + value;
         return String.valueOf(value);
     }
 
@@ -706,6 +753,7 @@ public final class JavaPrinter {
     private static void access(Access a, ExprSlot s, List<Token> out) {
         switch (a.kind) {
             case INDEX:
+            case CROP_INDEX:
                 out.add(new Token(a.name, Kind.IDENT, s));
                 add(out, "[", Kind.PUNCT);
                 slot(a.args.get(0), out, PREC_NONE, false);
@@ -734,8 +782,10 @@ public final class JavaPrinter {
     /** Source text of an access, with {@code ▢} standing for each index. Also labels palette chips. */
     public static String accessText(Access.Kind kind, String name) {
         switch (kind) {
-            case INDEX: return name + "[▢]";
-            case LENGTH: return name + ".length";
+            case INDEX:
+            case CROP_INDEX: return name + "[▢]";
+            case LENGTH:
+            case CROP_LENGTH: return name + ".length";
             case GRID_INDEX: return name + "[▢][▢]";
             case GRID_ROWS: return name + ".length";
             case GRID_COLS: return name + "[0].length";
@@ -747,6 +797,14 @@ public final class JavaPrinter {
 
     /** Prints an expression that is part of the statement's fixed shape; only its arguments are slots. */
     private static void fixed(Expr e, List<Token> out) {
+        if (e instanceof StringIntMapCall call) {
+            mapCall(call, null, out);
+            return;
+        }
+        if (e instanceof FunctionCall function) {
+            functionCall(function, null, out);
+            return;
+        }
         if (e instanceof AtomicCounter counter) {
             atomicCounter(counter, null, out);
             return;
@@ -834,10 +892,15 @@ public final class JavaPrinter {
         add(out, ";", Kind.PUNCT);
     }
 
-    private static void arrayAssignment(String name, ExprSlot index, ExprSlot value, List<Token> out) {
+    private static void arrayAssignment(String name, ExprSlot index, ExprSlot column, ExprSlot value,
+                                        List<Token> out) {
         add(out, name, Kind.IDENT);
         add(out, "[", Kind.PUNCT);
         slot(index, out, PREC_NONE, false);
+        if (column != null) {
+            add(out, "][", Kind.PUNCT);
+            slot(column, out, PREC_NONE, false);
+        }
         add(out, "] = ", Kind.PUNCT);
         slot(value, out, PREC_NONE, false);
         add(out, ";", Kind.PUNCT);
@@ -890,11 +953,26 @@ public final class JavaPrinter {
         streamOperation(call.terminal.method, call.callback, out);
     }
 
+    private static void mapCall(StringIntMapCall call, ExprSlot selected, List<Token> out) {
+        out.add(new Token(call.name + "." + call.op.method, Kind.METHOD, selected));
+        arguments(call.arguments, out);
+    }
+
+    private static void functionCall(FunctionCall call, ExprSlot selected, List<Token> out) {
+        out.add(new Token(call.name + "." + call.function.invocation, Kind.METHOD, selected));
+        arguments(java.util.Collections.singletonList(call.argument), out);
+    }
+
     private static void streamOperation(String name, StreamCallback callback, List<Token> out) {
         add(out, "." + name, Kind.METHOD);
         add(out, "(", Kind.PUNCT);
+        callbackTokens(callback, null, out);
+        if (!(callback instanceof StreamLambda lambda) || lambda.body == null) add(out, ")", Kind.PUNCT);
+    }
+
+    private static void callbackTokens(StreamCallback callback, ExprSlot selected, List<Token> out) {
         if (callback instanceof StreamLambda lambda) {
-            add(out, lambda.parameter.name, Kind.IDENT);
+            out.add(new Token(lambda.parameter.name, Kind.IDENT, selected));
             add(out, " -> ", Kind.OPERATOR);
             if (lambda.body != null) {
                 add(out, "{", Kind.PUNCT);
@@ -902,11 +980,23 @@ public final class JavaPrinter {
             }
             slot(lambda.expression, out, PREC_NONE, false);
         } else if (callback instanceof StreamMethodRef reference) {
-            add(out, reference.receiver, Kind.IDENT);
+            out.add(new Token(reference.receiver, Kind.IDENT, selected));
             add(out, "::", Kind.OPERATOR);
             add(out, reference.method, Kind.METHOD);
+        } else if (callback instanceof IntegerMethodRef reference) {
+            out.add(new Token(reference.kind.owner, Kind.TYPE, selected));
+            add(out, "::", Kind.OPERATOR);
+            add(out, reference.kind.method, Kind.METHOD);
+        } else if (callback instanceof FunctionVariable stored) {
+            out.add(new Token(stored.name, Kind.IDENT, selected));
         }
-        add(out, ")", Kind.PUNCT);
+    }
+
+    /** Java syntax for a standalone function initializer before it is inserted in a variable. */
+    public static String callbackText(StreamCallback callback) {
+        List<Token> out = new ArrayList<>();
+        callbackTokens(callback, null, out);
+        return text(out);
     }
 
     /** The call expression, or the opening line when the callback has a block body. */
@@ -927,7 +1017,39 @@ public final class JavaPrinter {
         add(out, ")", Kind.PUNCT);
     }
 
+
+    private static String stringLiteral(String text) {
+        StringBuilder quoted = new StringBuilder().append('"');
+        for (int i = 0; i < text.length(); i++) {
+            char unit = text.charAt(i);
+            switch (unit) {
+                case '\\' -> quoted.append("\\\\");
+                case '"' -> quoted.append("\\\"");
+                case '\b' -> quoted.append("\\b");
+                case '\t' -> quoted.append("\\t");
+                case '\n' -> quoted.append("\\n");
+                case '\f' -> quoted.append("\\f");
+                case '\r' -> quoted.append("\\r");
+                default -> {
+                    // Octal escapes keep control characters out of Java's Unicode escape preprocessor.
+                    if (Character.isISOControl(unit)) {
+                        quoted.append('\\').append((char) ('0' + (unit >> 6)))
+                                .append((char) ('0' + ((unit >> 3) & 7)))
+                                .append((char) ('0' + (unit & 7)));
+                    } else if (Character.isSurrogate(unit)) {
+                        quoted.append("\\u").append(Integer.toHexString(unit));
+                    } else {
+                        quoted.append(unit);
+                    }
+                }
+            }
+        }
+        return quoted.append('"').toString();
+    }
+
     private static int precedence(Expr e) {
+        if (e instanceof StringConcat) return Binary.Op.ADD.precedence;
+        if (e instanceof CropEquals) return Binary.Op.EQ.precedence;
         if (e instanceof Binary) return ((Binary) e).op().precedence;
         if (e instanceof InstanceOf) return Binary.Op.LT.precedence;
         if (e instanceof Not) return PREC_UNARY;

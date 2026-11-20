@@ -1,5 +1,6 @@
 package com.ccs.coffee_n_crops.lang.ast.expr;
 
+import com.ccs.coffee_n_crops.farm.Crop;
 import com.ccs.coffee_n_crops.lang.ast.Expr;
 import com.ccs.coffee_n_crops.lang.ast.ExprSlot;
 import com.ccs.coffee_n_crops.lang.interp.ExecutionContext;
@@ -13,7 +14,7 @@ import java.util.List;
 
 /**
  * Reads from an array or list variable: {@code row[i]}, {@code row.length}, {@code field[y][x]},
- * {@code list.get(i)}, {@code list.size()}. Every form evaluates to an int.
+ * {@code list.get(i)}, {@code list.size()}, or {@code crops[i]}.
  */
 public final class Access extends Expr {
 
@@ -31,14 +32,22 @@ public final class Access extends Expr {
         /** {@code name.get(i)} */
         LIST_GET(JType.INT_LIST, 1),
         /** {@code name.size()} */
-        LIST_SIZE(JType.INT_LIST, 0);
+        LIST_SIZE(JType.INT_LIST, 0),
+        CROP_INDEX(JType.CROP_ARRAY, JType.CROP, 1),
+        CROP_LENGTH(JType.CROP_ARRAY, 0);
 
         /** The type the variable must have. */
         public final JType target;
         public final int argCount;
+        public final JType resultType;
 
         Kind(JType target, int argCount) {
+            this(target, JType.INT, argCount);
+        }
+
+        Kind(JType target, JType resultType, int argCount) {
             this.target = target;
+            this.resultType = resultType;
             this.argCount = argCount;
         }
     }
@@ -95,6 +104,13 @@ public final class Access extends Expr {
             }
             case LIST_SIZE:
                 return Value.ofInt(target.asIntList().size());
+            case CROP_INDEX: {
+                int index = args.get(0).eval(ctx).asInt();
+                Crop[] crops = target.asCropArray();
+                return new Value(JType.CROP, crops[arrayIndex(index, crops.length)]);
+            }
+            case CROP_LENGTH:
+                return Value.ofInt(target.asCropArray().length);
             default:
                 throw new ScriptError("Unknown access " + kind);
         }

@@ -1,8 +1,10 @@
 package com.ccs.coffee_n_crops.farm;
 
 import com.ccs.coffee_n_crops.farm.error.EmptyTankException;
+import com.ccs.coffee_n_crops.farm.error.FarmException;
 import com.ccs.coffee_n_crops.farm.error.OutOfBoundsFarmException;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -21,10 +23,14 @@ public final class FarmWorld {
     public static final char RIPE = 'W';
     public static final char GROWING = 'g';
     public static final char GROWING_WATERED = 'w';
+    public static final char COFFEE_RIPE = 'C';
+    public static final char COFFEE_GROWING = 'c';
+    public static final char CARROT_RIPE = 'R';
+    public static final char ROCK = '#';
 
     /** Scanner codes: what {@code farmer.scanRow()} and {@code farmer.scanField()} report per tile. */
     public static final int SCAN_NOTHING = 0;
-    /** Young wheat that needs water. */
+    /** Young crop that needs water. */
     public static final int SCAN_YOUNG = 1;
     public static final int SCAN_RIPE = 2;
 
@@ -33,14 +39,21 @@ public final class FarmWorld {
     public static final String CROP_SPROUT = "sprout";
     public static final String CROP_WATERED = "watered";
     public static final String CROP_GRASS = "grass";
+    public static final String CROP_COFFEE = "coffee";
+    public static final String CROP_CARROT = "carrot";
     /** Every answer, in the order the editor offers them as String constants. */
-    public static final String[] CROP_NAMES = {CROP_WHEAT, CROP_SPROUT, CROP_WATERED, CROP_GRASS};
+    public static final String[] CROP_NAMES = {
+            CROP_WHEAT, CROP_SPROUT, CROP_WATERED, CROP_GRASS, CROP_COFFEE, CROP_CARROT
+    };
 
     /** Litres one watering takes from the tank. */
     public static final double WATER_PER_USE = 0.5;
     private static final double STEP_TICKS = 1.0;
     /** Continuous walking skips the pause between separate steps. */
     public static final double WALK_TICKS_PER_TILE = 0.4;
+    public static final double COFFEE_GROWTH_TICKS = 5;
+    private static final double FERTILIZER_GROWTH_FACTOR = .5;
+    private record Position(int x, int y) { }
 
     public final int width;
     public final int height;
@@ -55,10 +68,17 @@ public final class FarmWorld {
     private final List<Farmhand> farmers;
     private final Tile[][] tiles; // [y][x]
     private final int totalWheat;
+    private final int totalCoffee;
+    private final int totalCarrots;
     private final int totalGrowing;
+    private final List<Position> coffeeBeds = new ArrayList<>();
     private volatile int wheatHarvested;
+    private volatile int coffeeHarvested;
+    private volatile int carrotsHarvested;
     private volatile int watered;
     private volatile int ruined;
+    private volatile int fertilized;
+    private volatile double actionTicks;
     private final Map<Farmhand, Integer> farmerHarvests = new HashMap<>();
     private final Map<Farmhand, Integer> farmerWaterings = new HashMap<>();
     private volatile int resetCount;
@@ -115,16 +135,23 @@ public final class FarmWorld {
         this.farmers = partner == null ? Collections.singletonList(farmer)
                 : Collections.unmodifiableList(Arrays.asList(farmer, partner));
         int wheat = 0;
+        int coffee = 0;
+        int carrots = 0;
         int growing = 0;
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 TileState state = initialState(x, y);
                 tiles[y][x] = new Tile(state);
                 if (state == TileState.WHEAT_RIPE) wheat++;
-                if (state == TileState.WHEAT_GROWING) growing++;
+                if (state.isCoffee()) coffee++;
+                if (state == TileState.CARROT_RIPE) carrots++;
+                if (state == TileState.COFFEE_GROWING) coffeeBeds.add(new Position(x, y));
+                if (state.isDry()) growing++;
             }
         }
         this.totalWheat = wheat;
+        this.totalCoffee = coffee;
+        this.totalCarrots = carrots;
         this.totalGrowing = growing;
     }
 
@@ -135,16 +162,23 @@ public final class FarmWorld {
     public synchronized void reset() {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                tiles[y][x].state = initialState(x, y);
+                Tile tile = tiles[y][x];
+                tile.state = initialState(x, y);
+                tile.readyAt = 0;
+                tile.fertilized = false;
             }
         }
         farmer.reset(startX, startY);
         if (partnerStart != null) farmers.get(1).reset(partnerStart.x(), partnerStart.y());
         wheatHarvested = 0;
+        coffeeHarvested = 0;
+        carrotsHarvested = 0;
         watered = 0;
         farmerHarvests.clear();
         farmerWaterings.clear();
         ruined = 0;
+        fertilized = 0;
+        actionTicks = 0;
         tank = tankStart;
         refills = 0;
         caughtExceptions.clear();
@@ -238,14 +272,12 @@ public final class FarmWorld {
         Farmhand.Pose current = hand.pose();
         int nx = current.x + direction.dx;
         int ny = current.y + direction.dy;
-        if (nx < 0 || ny < 0 || nx >= width || ny >= height) {
-            throw new OutOfBoundsFarmException(nx, ny);
-        }
+        requireWalkable(nx, ny);
         hand.startWalking(nx, ny, direction, STEP_TICKS);
     }
 
     /**
-     * Cuts whatever crop is under the farmer. Ripe wheat is collected; young wheat is destroyed
+     * Cuts whatever crop is under the farmer. Ripe crops are collected; young crops are destroyed
      * and counted as ruined, which is why programs should check {@link #isRipe} first.
      */
     public synchronized void harvest(Farmhand hand) {
@@ -254,6 +286,12 @@ public final class FarmWorld {
             tile.state = TileState.STUBBLE;
             wheatHarvested++;
             farmerHarvests.merge(hand, 1, Integer::sum);
+        } else if (tile.state == TileState.COFFEE_RIPE) {
+            tile.state = TileState.STUBBLE;
+            coffeeHarvested++;
+        } else if (tile.state == TileState.CARROT_RIPE) {
+            tile.state = TileState.STUBBLE;
+            carrotsHarvested++;
         } else if (tile.state.isGrowing()) {
             tile.state = TileState.STUBBLE;
             ruined++;
@@ -261,7 +299,7 @@ public final class FarmWorld {
     }
 
     /**
-     * Waters the tile under the farmer. Dry young wheat becomes watered; young wheat that is
+     * Waters the tile under the farmer. A dry crop becomes watered; a young crop that is
      * already watered drowns and is counted as ruined. Anything else is unaffected.
      */
     public synchronized void water(Farmhand hand) {
@@ -271,15 +309,48 @@ public final class FarmWorld {
             tank -= WATER_PER_USE;
         }
         Tile tile = tileUnder(hand);
-        if (tile.state == TileState.WHEAT_GROWING) {
-            tile.state = TileState.WHEAT_GROWING_WATERED;
+        if (tile.state.isDry()) {
+            if (tile.state == TileState.COFFEE_GROWING) {
+                tile.readyAt = actionTicks + COFFEE_GROWTH_TICKS;
+                tile.state = TileState.COFFEE_WATERED;
+            } else {
+                tile.state = TileState.WHEAT_GROWING_WATERED;
+            }
             watered++;
             farmerWaterings.merge(hand, 1, Integer::sum);
-        } else if (tile.state == TileState.WHEAT_GROWING_WATERED) {
+        } else if (tile.state.isWatered()) {
             tile.state = TileState.STUBBLE;
             ruined++;
         }
     }
+
+    /** The first fertilizing of a watered coffee plant halves its remaining growth time. */
+    public synchronized void fertilize(Farmhand hand) {
+        Tile tile = tileUnder(hand);
+        if (tile.state != TileState.COFFEE_WATERED || tile.fertilized) return;
+        tile.fertilized = true;
+        tile.readyAt = actionTicks + (tile.readyAt - actionTicks) * FERTILIZER_GROWTH_FACTOR;
+        fertilized++;
+    }
+
+    /** Advances crop growth using simulation ticks, unaffected by the run speed or debugger. */
+    public synchronized void advanceTicks(double ticks) {
+        if (ticks <= 0) return;
+        actionTicks += ticks;
+        for (Position bed : coffeeBeds) {
+            Tile tile = tile(bed.x(), bed.y());
+            if (tile.state == TileState.COFFEE_WATERED && tile.readyAt <= actionTicks) {
+                tile.state = TileState.COFFEE_RIPE;
+            }
+        }
+    }
+
+    public double actionTicks() { return actionTicks; }
+    public int fertilized() { return fertilized; }
+    public int coffeeHarvested() { return coffeeHarvested; }
+    public int totalCoffee() { return totalCoffee; }
+    public int carrotsHarvested() { return carrotsHarvested; }
+    public int totalCarrots() { return totalCarrots; }
 
     /** Fills the tank to capacity. */
     public synchronized void refill() {
@@ -307,21 +378,23 @@ public final class FarmWorld {
             case WHEAT_RIPE: return CROP_WHEAT;
             case WHEAT_GROWING: return CROP_SPROUT;
             case WHEAT_GROWING_WATERED: return CROP_WATERED;
+            case COFFEE_GROWING, COFFEE_WATERED, COFFEE_RIPE: return CROP_COFFEE;
+            case CARROT_RIPE: return CROP_CARROT;
             default: return CROP_GRASS;
         }
     }
 
-    /** True if the tile under the farmer holds young wheat that has not been watered. */
+    /** True if the tile under the farmer holds a young crop that has not been watered. */
     public synchronized boolean isDry(Farmhand hand) {
-        return tileUnder(hand).state == TileState.WHEAT_GROWING;
+        return tileUnder(hand).state.isDry();
     }
 
-    /** True if one step in the direction stays on the farm. */
+    /** True if the neighboring tile is on the farm and clear of obstacles. */
     public synchronized boolean canMove(Farmhand hand, Direction direction) {
         Farmhand.Pose current = hand.pose();
         int nx = current.x + direction.dx;
         int ny = current.y + direction.dy;
-        return nx >= 0 && ny >= 0 && nx < width && ny < height;
+        return inBounds(nx, ny) && tile(nx, ny).state != TileState.ROCK;
     }
 
     /**
@@ -330,10 +403,19 @@ public final class FarmWorld {
      * @return how many tiles it travelled, counting sideways and up/down steps
      */
     public synchronized int walkTo(Farmhand hand, int x, int y) {
-        if (x < 0 || y < 0 || x >= width || y >= height) {
-            throw new OutOfBoundsFarmException(x, y);
-        }
+        requireWalkable(x, y);
         Farmhand.Pose current = hand.pose();
+        // Validate the whole route before publishing a new pose.
+        int routeX = current.x;
+        int routeY = current.y;
+        while (routeX != x) {
+            routeX += Integer.signum(x - routeX);
+            requireWalkable(routeX, routeY);
+        }
+        while (routeY != y) {
+            routeY += Integer.signum(y - routeY);
+            requireWalkable(routeX, routeY);
+        }
         int distance = Math.abs(x - current.x) + Math.abs(y - current.y);
         if (distance > 0) {
             // The renderer uses the facing of each leg. The final pose faces the last leg.
@@ -345,12 +427,36 @@ public final class FarmWorld {
         return distance;
     }
 
+    private boolean inBounds(int x, int y) {
+        return x >= 0 && y >= 0 && x < width && y < height;
+    }
+
+    private void requireWalkable(int x, int y) {
+        if (!inBounds(x, y)) throw new OutOfBoundsFarmException(x, y);
+        if (tile(x, y).state == TileState.ROCK) {
+            throw new FarmException("the path is blocked at (" + x + ", " + y + ")");
+        }
+    }
+
     /** What the scanner reports for each tile of the farmer's row, west to east. */
     public synchronized int[] scanRow(Farmhand hand) {
         int[] codes = new int[width];
         int y = hand.pose().y;
         for (int x = 0; x < width; x++) codes[x] = code(tiles[y][x].state);
         return codes;
+    }
+
+    /** The crop under the farmhand, including its growth stage. */
+    public synchronized Crop scanCrop(Farmhand hand) {
+        return Crop.fromTile(tileUnder(hand).state);
+    }
+
+    /** The row's crops from west to east, with no numeric codes to decode. */
+    public synchronized Crop[] scanCrops(Farmhand hand) {
+        Crop[] crops = new Crop[width];
+        int y = hand.pose().y;
+        for (int x = 0; x < width; x++) crops[x] = Crop.fromTile(tiles[y][x].state);
+        return crops;
     }
 
     /** The scanner's report for the whole farm, indexed {@code [y][x]}. */
@@ -363,8 +469,8 @@ public final class FarmWorld {
     }
 
     private static int code(TileState state) {
-        if (state == TileState.WHEAT_RIPE) return SCAN_RIPE;
-        if (state == TileState.WHEAT_GROWING) return SCAN_YOUNG;
+        if (state.isRipe()) return SCAN_RIPE;
+        if (state.isDry()) return SCAN_YOUNG;
         return SCAN_NOTHING;
     }
 
@@ -374,7 +480,7 @@ public final class FarmWorld {
     }
 
     public synchronized boolean isRipe(Farmhand hand) {
-        return tileUnder(hand).state == TileState.WHEAT_RIPE;
+        return tileUnder(hand).state.isRipe();
     }
 
     private Tile tileUnder(Farmhand hand) {
@@ -399,7 +505,7 @@ public final class FarmWorld {
         return totalWheat - wheatHarvested;
     }
 
-    /** Young wheat tiles the level started with. */
+    /** Dry young crops the level started with. */
     public int totalGrowing() {
         return totalGrowing;
     }
@@ -413,17 +519,17 @@ public final class FarmWorld {
         return farmerWaterings.getOrDefault(hand, 0);
     }
 
-    /** Young wheat lost to a mistake: cut before it was ripe, or watered twice. */
+    /** Young crops lost to a mistake: cut before they were ripe, or watered twice. */
     public int ruined() {
         return ruined;
     }
 
-    /** Young wheat still standing dry. */
+    /** Young crops still standing dry. */
     public synchronized int dryRemaining() {
         int dry = 0;
         for (Tile[] row : tiles) {
             for (Tile tile : row) {
-                if (tile.state == TileState.WHEAT_GROWING) dry++;
+                if (tile.state.isDry()) dry++;
             }
         }
         return dry;
@@ -434,6 +540,10 @@ public final class FarmWorld {
         if (c == RIPE) return TileState.WHEAT_RIPE;
         if (c == GROWING) return TileState.WHEAT_GROWING;
         if (c == GROWING_WATERED) return TileState.WHEAT_GROWING_WATERED;
+        if (c == COFFEE_RIPE) return TileState.COFFEE_RIPE;
+        if (c == COFFEE_GROWING) return TileState.COFFEE_GROWING;
+        if (c == CARROT_RIPE) return TileState.CARROT_RIPE;
+        if (c == ROCK) return TileState.ROCK;
         return TileState.GRASS;
     }
 }

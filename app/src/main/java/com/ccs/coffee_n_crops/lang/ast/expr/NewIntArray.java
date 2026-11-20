@@ -20,11 +20,14 @@ public final class NewIntArray extends Expr {
 
     @Override
     public Value eval(ExecutionContext ctx) throws InterruptedException {
-        int size = length.eval(ctx).asInt();
-        if (size < 0) throw new ScriptError("NegativeArraySizeException: " + size);
-        if (size > MAX_LENGTH) throw new ScriptError("OutOfMemoryError: Requested array size exceeds VM limit");
-        int[] array = new int[size];
+        int[] array = allocate(length.eval(ctx).asInt());
         ctx.recordLessonUse(this);
         return new Value(JType.INT_ARRAY, array);
+    }
+
+    static int[] allocate(int size) {
+        if (size < 0) throw new ScriptError("NegativeArraySizeException: " + size);
+        if (size > MAX_LENGTH) throw new ScriptError("OutOfMemoryError: Requested array size exceeds VM limit");
+        return new int[size];
     }
 }

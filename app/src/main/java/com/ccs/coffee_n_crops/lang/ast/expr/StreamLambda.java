@@ -35,17 +35,12 @@ public final class StreamLambda extends StreamCallback {
     }
 
     @Override Bound bind(ExecutionContext ctx) {
-        return element -> {
-            ctx.pushScope();
-            try {
-                ctx.scope().declare(parameter.name, Value.ofInt(element));
-                Value result = expression == null ? runBody(ctx) : expression.eval(ctx);
-                ctx.recordLessonUse(this);
-                return result;
-            } finally {
-                ctx.popScope();
-            }
-        };
+        ExecutionContext.LambdaScope captured = ctx.captureLambdaScope();
+        return (call, element) -> call.invokeLambda(captured, parameter.name, element, invocation -> {
+            Value result = expression == null ? runBody(invocation) : expression.eval(invocation);
+            invocation.recordLessonUse(this);
+            return result;
+        });
     }
 
     private Value runBody(ExecutionContext ctx) throws InterruptedException {

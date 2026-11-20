@@ -53,8 +53,11 @@ public final class ControlFlow {
         if (statement instanceof SwitchStmt) {
             SwitchStmt selection = (SwitchStmt) statement;
             if (selection.defaultBlock() == null) return true;
-            for (Block arm : selection.childBlocks()) {
-                if (completesNormally(arm) || hasExitingJump(arm, selection, false)) return true;
+            if (completesNormally(selection.defaultBlock())
+                    || hasExitingJump(selection.defaultBlock(), selection, false)) return true;
+            for (SwitchStmt.Case arm : selection.cases()) {
+                if (hasExitingJump(arm.body, selection, false)
+                        || (!arm.fallsThrough() && completesNormally(arm.body))) return true;
             }
             return false;
         }

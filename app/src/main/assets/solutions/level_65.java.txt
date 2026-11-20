@@ -1,0 +1,9 @@
+void run(Farmhand farmer) {
+    Crop[] crops = farmer.scanCrops();
+    for (int i = 0; i < crops.length; i++) {
+        if (crops[i] == Crop.WHEAT) {
+            farmer.walkTo(i, 0);
+            farmer.harvest();
+        }
+    }
+}

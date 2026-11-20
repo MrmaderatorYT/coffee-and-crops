@@ -1,0 +1,29 @@
+void run(Farmhand farmer) {
+    final java.util.concurrent.locks.ReentrantLock pumpA = new java.util.concurrent.locks.ReentrantLock();
+    final java.util.concurrent.locks.ReentrantLock pumpB = new java.util.concurrent.locks.ReentrantLock();
+    farmer.workTogether(first -> {
+        pumpA.lock();
+        try {
+            pumpB.lock();
+            try {
+                first.water();
+            } finally {
+                pumpB.unlock();
+            }
+        } finally {
+            pumpA.unlock();
+        }
+    }, second -> {
+        pumpA.lock();
+        try {
+            pumpB.lock();
+            try {
+                second.water();
+            } finally {
+                pumpB.unlock();
+            }
+        } finally {
+            pumpA.unlock();
+        }
+    });
+}

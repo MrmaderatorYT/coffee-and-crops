@@ -1,0 +1,12 @@
+void run(Farmhand farmer) {
+    farmer.walkTo(0, 1);
+    farmer.walkTo(2, 0);
+    farmer.water();
+    farmer.fertilize();
+    while (!farmer.isRipe()) {
+        farmer.waitOneTick();
+    }
+    farmer.harvest();
+    farmer.walkTo(3, 1);
+    farmer.harvest();
+}

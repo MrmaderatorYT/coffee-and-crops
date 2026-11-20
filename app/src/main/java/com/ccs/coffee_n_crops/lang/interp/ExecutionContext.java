@@ -305,6 +305,44 @@ public final class ExecutionContext {
         if (completed) currentNode = previous.node;
     }
 
+    /** Bindings and receiver retained when a lambda is created. */
+    public static final class LambdaScope {
+        private final Scope bindings;
+        private final ObjectInstance receiver;
+        private final ClassDecl owner;
+
+        private LambdaScope(Scope bindings, ObjectInstance receiver, ClassDecl owner) {
+            this.bindings = bindings;
+            this.receiver = receiver;
+            this.owner = owner;
+        }
+    }
+
+    @FunctionalInterface
+    public interface LambdaBody {
+        Value apply(ExecutionContext context) throws InterruptedException;
+    }
+
+    public LambdaScope captureLambdaScope() {
+        return new LambdaScope(scope.capture(), receiver, declaringClass);
+    }
+
+    /** Executes with the lambda's own locals and the bindings from its declaration site. */
+    public Value invokeLambda(LambdaScope captured, String parameter, int input, LambdaBody body)
+            throws InterruptedException {
+        Frame previous = enterFrame(captured.receiver, captured.owner);
+        boolean completed = false;
+        try {
+            scope = new Scope(captured.bindings);
+            scope.declare(parameter, Value.ofInt(input));
+            Value result = body.apply(this);
+            completed = true;
+            return result;
+        } finally {
+            leaveFrame(previous, completed);
+        }
+    }
+
     /** Evaluates new without creating any additional farm actor or Java thread. */
     public Value newObject(String name, Value[] arguments) throws InterruptedException {
         checkActive();
@@ -558,7 +596,7 @@ public final class ExecutionContext {
         }
         emitObjectState();
         listener.onNodeEnter(farmer.id, node.id);
-        debug.awaitPermission(this::isActive, farmer.id);
+        debug.awaitPermission(this::isActive, farmer.id, () -> listener.onVariables(farmer.id, scope.snapshot()));
         checkActive();
     }
 

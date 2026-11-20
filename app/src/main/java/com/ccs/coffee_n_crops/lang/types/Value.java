@@ -1,10 +1,12 @@
 package com.ccs.coffee_n_crops.lang.types;
 
 import com.ccs.coffee_n_crops.farm.Direction;
+import com.ccs.coffee_n_crops.farm.Crop;
 import com.ccs.coffee_n_crops.lang.interp.ScriptError;
 import com.ccs.coffee_n_crops.lang.runtime.ObjectArray;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * A runtime value produced by evaluating an expression. Arrays and lists are held by reference,
@@ -76,6 +78,12 @@ public final class Value {
         return (Direction) raw;
     }
 
+    public Crop[] asCropArray() {
+        if (type != JType.CROP_ARRAY) throw new ScriptError("array required, but " + type.javaName + " found");
+        if (raw == null) throw new ScriptError("NullPointerException");
+        return (Crop[]) raw;
+    }
+
     public int[] asIntArray() {
         if (type != JType.INT_ARRAY) throw new ScriptError("Expected int[] but found " + type.javaName);
         return (int[]) raw;
@@ -96,6 +104,13 @@ public final class Value {
     public List<Integer> asIntList() {
         if (type != JType.INT_LIST) throw new ScriptError("Expected ArrayList but found " + type.javaName);
         return (List<Integer>) raw;
+    }
+
+    @SuppressWarnings("unchecked")
+    public Map<String, Integer> asStringIntMap() {
+        if (type != JType.STRING_INT_MAP) throw new ScriptError("Expected HashMap but found " + type.javaName);
+        if (raw == null) throw new ScriptError("NullPointerException");
+        return (Map<String, Integer>) raw;
     }
 
     @Override

@@ -1,0 +1,14 @@
+void run(Farmhand farmer) {
+    int[][] field = farmer.scanField();
+    for (int i = 0; i < field.length; i++) {
+        for (int j = 0; j < field[0].length; j++) {
+            if (field[i][j] == 2) {
+                farmer.walkTo(j, i);
+                farmer.harvest();
+            } else if (field[i][j] == 1) {
+                farmer.walkTo(j, i);
+                farmer.water();
+            }
+        }
+    }
+}

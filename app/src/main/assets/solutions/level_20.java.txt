@@ -1,0 +1,23 @@
+class Program {
+    void run(Farmhand farmer) {
+        RowPlan first = new RowPlan(0, 3);
+        RowPlan second = new RowPlan(1, 5);
+        for (int i = 0; i < first.width; i++) {
+            farmer.walkTo(i, first.row);
+            farmer.harvest();
+        }
+        for (int j = 0; j < second.width; j++) {
+            farmer.walkTo(j, second.row);
+            farmer.harvest();
+        }
+    }
+}
+
+class RowPlan {
+    int row = 0;
+    int width = 0;
+    RowPlan(int row, int width) {
+        this.row = row;
+        this.width = width;
+    }
+}

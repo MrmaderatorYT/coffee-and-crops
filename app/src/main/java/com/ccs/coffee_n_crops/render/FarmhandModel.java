@@ -65,6 +65,7 @@ final class FarmhandModel {
         float harvesting = action == Farmhand.Action.HARVEST ? pulse : 0f;
         float pouring = action == Farmhand.Action.WATER ? pulse : 0f;
         float filling = action == Farmhand.Action.REFILL ? pulse : 0f;
+        float fertilizing = action == Farmhand.Action.FERTILIZE ? pulse : 0f;
         float stride = (float) Math.sin(stridePhase) * movement;
         float rise = Math.abs(stride) * .018f - harvesting * .081f - pouring * .031f;
         float lean = harvesting * .108f + pouring * .037f;
@@ -74,8 +75,8 @@ final class FarmhandModel {
         leg(1f, stridePhase + PI, movement, rise, lean);
         torso(rise, lean);
         head(rise, lean);
-        arm(-1f, -stride, rise, lean, harvesting, pouring, filling, progress);
-        arm(1f, stride, rise, lean, harvesting, pouring, filling, progress);
+        arm(-1f, -stride, rise, lean, harvesting, pouring, filling, fertilizing, progress);
+        arm(1f, stride, rise, lean, harvesting, pouring, filling, fertilizing, progress);
     }
 
     private void leg(float side, float phase, float movement, float rise, float lean) {
@@ -154,11 +155,11 @@ final class FarmhandModel {
     }
 
     private void arm(float side, float swing, float rise, float lean, float harvesting,
-                     float pouring, float filling, float progress) {
+                     float pouring, float filling, float fertilizing, float progress) {
         float shoulder = SHOULDER_HEIGHT + rise - .013f;
         boolean workingHand = side > 0f;
-        float reach = workingHand ? harvesting * .159f + pouring * .124f + filling * .043f : 0f;
-        float up = workingHand ? pouring * .052f + filling * .146f - harvesting * .057f : 0f;
+        float reach = workingHand ? harvesting * .159f + pouring * .124f + filling * .043f + fertilizing * .12f : 0f;
+        float up = workingHand ? pouring * .052f + filling * .146f - harvesting * .057f + fertilizing * .09f : 0f;
         float handX = side * (.158f + (workingHand ? harvesting * .020f : 0f));
         float handY = lean + swing * .094f + reach + .012f;
         float handZ = shoulder - .205f + up;
@@ -175,6 +176,13 @@ final class FarmhandModel {
             wateringCan(handX, handY, handZ, pouring, filling, progress);
         } else if (workingHand && harvesting > .014f) {
             handTrowel(handX, handY, handZ, harvesting);
+        } else if (workingHand && fertilizing > .014f) {
+            gem(handX + .024f, handY + .03f, handZ - .039f, .039f, .048f, .061f, 0xffa27049);
+            if (fertilizing > .55f) for (int i = 0; i < 4; i++) {
+                float fall = (progress * 4f + i * .25f) % 1f;
+                gem(handX + .024f, handY + .14f * fall, handZ - .25f * fall * fall,
+                        .01f, .01f, .014f, 0xffd3af72);
+            }
         }
     }
 

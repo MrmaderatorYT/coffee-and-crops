@@ -71,6 +71,14 @@
                 android:textSize="13sp" />
 
             <Button
+                android:id="@+id/toggle_sound"
+                style="@style/FarmControl"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="6dp"
+                android:text="@string/farm_sound_on" />
+
+            <Button
                 android:id="@+id/language_uk"
                 style="@style/FarmControl"
                 android:layout_width="wrap_content"

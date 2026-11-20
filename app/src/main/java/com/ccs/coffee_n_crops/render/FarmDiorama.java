@@ -158,14 +158,15 @@ final class FarmDiorama {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 TileState state = tileStates[y * width + x];
-                boolean turf = state == TileState.GRASS;
+                boolean turf = state == TileState.GRASS || state == TileState.ROCK;
                 int alternate = (x + y) & 1;
                 int ground = turf ? (alternate == 0 ? theme.land.turfLight() : theme.land.turfDark()) : BED_EDGE;
                 tiles.box(x + .025f, y + .025f, .003f, .95f, .95f, .013f, ground);
                 if (turf) {
                     turfDetails(x, y);
+                    if (state == TileState.ROCK) rock(x, y);
                 } else {
-                    boolean wet = state == TileState.WHEAT_GROWING_WATERED;
+                    boolean wet = state.isWatered();
                     tiles.box(x + .078f, y + .078f, .017f, .844f, .844f, BED_HEIGHT - .017f,
                             wet ? WET_SOIL : SOIL);
                     plotDetails(x, y, state, wet);
@@ -186,7 +187,10 @@ final class FarmDiorama {
                 int seed = (x * 13 + y * 17 + lane * 7 + column * 5) & 7;
                 float px = x + .25f + .25f * column + (seed - 3) * .011f;
                 float py = yLane + (3 - seed) * .009f;
-                if (state == TileState.WHEAT_RIPE) wheat(px, py, seed);
+                if (state.isCoffee()) {
+                    if (column != 1 && lane != 1) coffee(px, py, state);
+                } else if (state == TileState.WHEAT_RIPE) wheat(px, py, seed);
+                else if (state == TileState.CARROT_RIPE) carrot(px, py, seed);
                 else if (state.isGrowing()) sprout(px, py, seed, wet);
                 else if ((seed & 1) == 0) {
                     scenery.tube(px, py, BED_HEIGHT, px + .012f, py, .115f, .018f, .011f, 4, 0xffba8753);
@@ -197,6 +201,36 @@ final class FarmDiorama {
             castShadows.disk(x + .62f, y + .72f, .048f, .143f, .066f, 0x874c9d9e);
             castShadows.disk(x + .60f, y + .71f, .051f, .058f, .013f, 0x9598c7bf);
         }
+    }
+
+    private void rock(int x, int y) {
+        scenery.gem(x + .49f, y + .48f, .18f, .30f, .28f, .22f, 0xff707871);
+        scenery.gem(x + .75f, y + .59f, .10f, .13f, .16f, .12f, 0xff949b83);
+        castShadows.shadow(x + .55f, y + .56f, .021f, .36f, .29f, 57);
+    }
+
+    private void coffee(float x, float y, TileState state) {
+        boolean ripe = state.isRipe();
+        float crown = ripe ? .33f : .24f;
+        scenery.tube(x, y, BED_HEIGHT, x, y, crown, .022f, .012f, 5, 0xff875b3b);
+        leaf(x, y, crown - .06f, .16f, .09f, .03f, 0xff518b45);
+        leaf(x, y, crown - .04f, -.16f, -.06f, .05f, 0xff5f9b47);
+        leaf(x, y, crown - .03f, -.07f, .15f, .045f, 0xff3c7545);
+        leaf(x, y, crown, .03f, -.16f, .045f, 0xff6aa64f);
+        if (ripe) {
+            scenery.gem(x + .074f, y + .042f, crown - .025f, .032f, .033f, .034f, 0xffc94345);
+            scenery.gem(x - .069f, y - .034f, crown - .015f, .031f, .033f, .028f, 0xffed644e);
+            scenery.gem(x - .036f, y + .067f, crown - .021f, .034f, .030f, .032f, 0xffb53543);
+        }
+        castShadows.shadow(x + .073f, y + .052f, .048f, .12f, .11f, 48);
+    }
+
+    private void carrot(float x, float y, int seed) {
+        float top = .134f + (seed % 3) * .009f;
+        scenery.gem(x, y, .093f, .044f, .046f, .045f, 0xffe78336);
+        leaf(x, y, top, .085f, .026f, .088f, 0xff6cad53);
+        leaf(x, y, top, -.076f, .012f, .071f, 0xff4c9849);
+        leaf(x, y, top, .014f, -.051f, .111f, 0xff85b75a);
     }
 
     private void wheat(float x, float y, int seed) {

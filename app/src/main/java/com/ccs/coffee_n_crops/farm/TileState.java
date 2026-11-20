@@ -11,9 +11,30 @@ public enum TileState {
     /** Soil with ripe wheat, ready to harvest. */
     WHEAT_RIPE,
     /** Soil with cut stubble, left after a harvest. */
-    STUBBLE;
+    STUBBLE,
+    COFFEE_GROWING,
+    COFFEE_WATERED,
+    COFFEE_RIPE,
+    CARROT_RIPE,
+    ROCK;
 
     public boolean isGrowing() {
-        return this == WHEAT_GROWING || this == WHEAT_GROWING_WATERED;
+        return isDry() || isWatered();
+    }
+
+    public boolean isDry() {
+        return this == WHEAT_GROWING || this == COFFEE_GROWING;
+    }
+
+    public boolean isWatered() {
+        return this == WHEAT_GROWING_WATERED || this == COFFEE_WATERED;
+    }
+
+    public boolean isRipe() {
+        return this == WHEAT_RIPE || this == COFFEE_RIPE || this == CARROT_RIPE;
+    }
+
+    public boolean isCoffee() {
+        return this == COFFEE_GROWING || this == COFFEE_WATERED || this == COFFEE_RIPE;
     }
 }

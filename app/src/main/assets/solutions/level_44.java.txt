@@ -1,0 +1,24 @@
+class Program {
+    void run(Farmhand farmer) {
+        Counter counter = new Counter();
+        farmer.runTogether(() -> {
+            for (int i = 0; i < 3; i++) {
+                synchronized (counter) {
+                    counter.total = counter.total + 1;
+                }
+            }
+        }, () -> {
+            for (int i = 0; i < 3; i++) {
+                synchronized (counter) {
+                    counter.total = counter.total + 1;
+                }
+            }
+        });
+        farmer.walkTo(counter.total, 0);
+        farmer.harvest();
+    }
+}
+
+class Counter {
+    int total = 0;
+}

@@ -34,6 +34,9 @@ public final class ObjectMethods {
         if (raw instanceof ObjectArray array) return JType.objectArray(array.componentType());
         if (raw instanceof String) return JType.STRING;
         if (raw instanceof List<?>) return JType.INT_LIST;
+        if (raw instanceof java.util.Map<?, ?>) return JType.STRING_INT_MAP;
+        if (raw instanceof com.ccs.coffee_n_crops.farm.Crop) return JType.CROP;
+        if (raw instanceof com.ccs.coffee_n_crops.farm.Crop[]) return JType.CROP_ARRAY;
         if (raw instanceof int[]) return JType.INT_ARRAY;
         if (raw instanceof int[][]) return JType.INT_GRID;
         if (raw instanceof Farmhand) return JType.FARMHAND;

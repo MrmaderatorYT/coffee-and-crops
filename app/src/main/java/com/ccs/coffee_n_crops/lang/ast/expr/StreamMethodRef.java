@@ -22,9 +22,9 @@ public final class StreamMethodRef extends StreamCallback {
         List<Integer> target = ctx.readVariable(receiver).asIntList();
         if (target == null) throw new ScriptError("NullPointerException");
         if (!method.equals("add")) throw new ScriptError("invalid method reference");
-        return element -> {
+        return (call, element) -> {
             target.add(element);
-            ctx.recordLessonUse(this);
+            call.recordLessonUse(this);
             return Value.VOID;
         };
     }

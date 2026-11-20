@@ -23,6 +23,7 @@ final class AppLanguage {
     private static final String LANGUAGE_KEY = "language";
     private static final String EARLY_LESSONS = "i18n/uk_levels_01_28.json";
     private static final String LATER_LESSONS = "i18n/uk_levels_29_56.json";
+    private static final String COFFEE_LESSONS = "i18n/uk_levels_57_plus.json";
     private static LevelTranslations ukrainian;
 
     private AppLanguage() { }
@@ -52,7 +53,8 @@ final class AppLanguage {
     private static synchronized LevelTranslations ukrainianLessons(Context context) {
         if (ukrainian == null) {
             try {
-                ukrainian = LevelTranslations.parse(read(context, EARLY_LESSONS), read(context, LATER_LESSONS));
+                ukrainian = LevelTranslations.parse(read(context, EARLY_LESSONS), read(context, LATER_LESSONS),
+                        read(context, COFFEE_LESSONS));
             } catch (IOException | JSONException | IllegalArgumentException error) {
                 Log.e("AppLanguage", "Cannot load bundled lesson translations", error);
                 ukrainian = LevelTranslations.ENGLISH;

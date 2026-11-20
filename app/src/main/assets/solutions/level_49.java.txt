@@ -1,0 +1,12 @@
+void run(Farmhand farmer) {
+    ArrayList<Integer> stops = new ArrayList<>();
+    stops.add(0);
+    stops.add(1);
+    stops.add(2);
+    stops.add(4);
+    stops.add(6);
+    long count = stops.stream().filter(cell -> cell >= 2).count();
+    if (count == 3L) {
+        farmer.harvest();
+    }
+}

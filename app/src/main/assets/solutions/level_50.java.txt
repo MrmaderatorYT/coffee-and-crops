@@ -1,0 +1,10 @@
+void run(Farmhand farmer) {
+    ArrayList<Integer> stops = new ArrayList<>();
+    stops.add(0);
+    stops.add(2);
+    stops.add(4);
+    boolean found = stops.stream().anyMatch(cell -> cell == 4);
+    if (found) {
+        farmer.harvest();
+    }
+}

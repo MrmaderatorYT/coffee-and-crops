@@ -63,6 +63,7 @@ public final class LevelTranslationsTest {
         if (!Files.isDirectory(assets)) assets = Paths.get("app").resolve(assets);
         return LevelTranslations.parse(
                 new String(Files.readAllBytes(assets.resolve("uk_levels_01_28.json")), StandardCharsets.UTF_8),
-                new String(Files.readAllBytes(assets.resolve("uk_levels_29_56.json")), StandardCharsets.UTF_8));
+                new String(Files.readAllBytes(assets.resolve("uk_levels_29_56.json")), StandardCharsets.UTF_8),
+                new String(Files.readAllBytes(assets.resolve("uk_levels_57_plus.json")), StandardCharsets.UTF_8));
     }
 }

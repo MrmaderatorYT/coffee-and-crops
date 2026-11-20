@@ -1,0 +1,15 @@
+class Program {
+    void run(Farmhand farmer) {
+        Object object = new Parcel();
+        Object object2 = object;
+        if (object.equals(object2)) {
+            farmer.harvest();
+        }
+        int hash = object.hashCode();
+        String description = object.toString();
+        java.lang.Class<?> type = object.getClass();
+    }
+}
+
+class Parcel {
+}

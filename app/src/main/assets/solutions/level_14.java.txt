@@ -1,0 +1,16 @@
+void run(Farmhand farmer) {
+    for (int i = 0; i < 3; i++) {
+        tendRow(farmer, i);
+    }
+}
+
+void tendRow(Farmhand farmer, int y) {
+    for (int i = 0; i < 6; i++) {
+        farmer.walkTo(i, y);
+        if (farmer.isRipe()) {
+            farmer.harvest();
+        } else if (farmer.isDry()) {
+            farmer.water();
+        }
+    }
+}

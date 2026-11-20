@@ -1,0 +1,10 @@
+void run(Farmhand farmer) {
+    java.util.function.IntFunction<int[]> factory = int[]::new;
+    int[] route = factory.apply(2);
+    route[0] = 1;
+    route[1] = 4;
+    for (int column : route) {
+        farmer.walkTo(column, 0);
+        farmer.harvest();
+    }
+}

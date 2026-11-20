@@ -1,0 +1,18 @@
+void run(Farmhand farmer) {
+    int count = countRipe(farmer);
+    for (int i = 0; i < count; i++) {
+        farmer.harvest();
+        farmer.move(Direction.EAST);
+    }
+}
+
+int countRipe(Farmhand farmer) {
+    int[] row = farmer.scanRow();
+    int count = 0;
+    for (int i = 0; i < row.length; i++) {
+        if (row[i] == 2) {
+            count = count + 1;
+        }
+    }
+    return count;
+}

@@ -1,0 +1,21 @@
+class Program {
+    void run(Farmhand farmer) {
+        Signal signal = new Signal();
+        farmer.runTogether(() -> {
+            signal.column = 4;
+            signal.ready = true;
+        }, () -> {
+            while (!signal.ready) {
+            }
+            signal.observed = signal.column;
+        });
+        farmer.walkTo(signal.observed, 0);
+        farmer.harvest();
+    }
+}
+
+class Signal {
+    int column = 0;
+    volatile boolean ready = false;
+    int observed = 0;
+}

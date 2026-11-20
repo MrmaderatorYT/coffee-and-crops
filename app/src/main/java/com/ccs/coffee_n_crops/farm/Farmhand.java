@@ -6,7 +6,7 @@ import java.util.function.Consumer;
 
 /** The person working the farm. The renderer reads a single immutable pose per frame. */
 public final class Farmhand {
-    public enum Action { IDLE, WALK, HARVEST, WATER, REFILL }
+    public enum Action { IDLE, WALK, HARVEST, WATER, REFILL, FERTILIZE }
 
     /** Position, facing and action published together so a frame cannot mix separate updates. */
     public static final class Pose {

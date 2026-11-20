@@ -1,0 +1,8 @@
+void run(Farmhand farmer) {
+    for (Direction d : Direction.values()) {
+        for (int i = 0; i < 2; i++) {
+            farmer.harvest();
+            farmer.move(d);
+        }
+    }
+}

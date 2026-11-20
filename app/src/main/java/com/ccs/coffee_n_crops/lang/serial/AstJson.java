@@ -7,6 +7,7 @@ import com.ccs.coffee_n_crops.lang.ast.stmt.SynchronizedStmt;
 import com.ccs.coffee_n_crops.lang.ast.stmt.TogetherStmt;
 
 import com.ccs.coffee_n_crops.farm.Direction;
+import com.ccs.coffee_n_crops.farm.Crop;
 import com.ccs.coffee_n_crops.lang.ast.Expr;
 import com.ccs.coffee_n_crops.lang.ast.ExprSlot;
 import com.ccs.coffee_n_crops.lang.ast.MethodDecl;
@@ -30,8 +31,15 @@ import com.ccs.coffee_n_crops.lang.ast.expr.CollectionCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamCallback;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamLambda;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionValue;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionCall;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionVariable;
+import com.ccs.coffee_n_crops.lang.ast.expr.FunctionType;
+import com.ccs.coffee_n_crops.lang.ast.expr.IntegerMethodRef;
 import com.ccs.coffee_n_crops.lang.ast.expr.StreamMethodRef;
 import com.ccs.coffee_n_crops.lang.ast.expr.NewIntArray;
+import com.ccs.coffee_n_crops.lang.ast.expr.NewIntGrid;
+import com.ccs.coffee_n_crops.lang.ast.expr.IntArrayLiteral;
 import com.ccs.coffee_n_crops.lang.ast.expr.NewObjectArray;
 import com.ccs.coffee_n_crops.lang.ast.expr.ObjectArrayGet;
 import com.ccs.coffee_n_crops.lang.ast.stmt.ArrayAssign;
@@ -39,6 +47,11 @@ import com.ccs.coffee_n_crops.lang.ast.stmt.ObjectArrayAssign;
 import com.ccs.coffee_n_crops.lang.ast.expr.Not;
 import com.ccs.coffee_n_crops.lang.ast.expr.PostIncrement;
 import com.ccs.coffee_n_crops.lang.ast.expr.StrEquals;
+import com.ccs.coffee_n_crops.lang.ast.expr.CropEquals;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringConcat;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringLength;
+import com.ccs.coffee_n_crops.lang.ast.expr.NewStringIntMap;
+import com.ccs.coffee_n_crops.lang.ast.expr.StringIntMapCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.UserCall;
 import com.ccs.coffee_n_crops.lang.ast.expr.VarRef;
 import com.ccs.coffee_n_crops.lang.ast.stmt.Assign;
@@ -81,6 +94,11 @@ public final class AstJson {
 
     public static JSONObject toJson(Block block) throws JSONException {
         return writeBlock(block).put("actorApi", LegacyFarmApi.FARMHAND_VERSION);
+    }
+
+    /** Deep-copies a statement with independent node IDs and editable slots. */
+    public static Stmt copyStatement(Stmt statement) throws JSONException {
+        return stmtFrom(stmt(statement));
     }
 
     private static JSONObject writeBlock(Block block) throws JSONException {
@@ -260,7 +278,9 @@ public final class AstJson {
             SwitchStmt sw = (SwitchStmt) s;
             JSONArray cases = new JSONArray();
             for (SwitchStmt.Case c : sw.cases()) {
-                cases.put(new JSONObject().put("label", c.value()).put("body", writeBlock(c.body)));
+                JSONObject arm = new JSONObject().put("label", c.value()).put("body", writeBlock(c.body));
+                if (c.fallsThrough()) arm.put("fallThrough", true);
+                cases.put(arm);
             }
             JSONObject o = new JSONObject().put("t", "switch").put("on", sw.subject.type.name())
                     .put("subject", expr(sw.subject)).put("cases", cases);
@@ -291,8 +311,10 @@ public final class AstJson {
         }
         if (s instanceof ArrayAssign) {
             ArrayAssign assignment = (ArrayAssign) s;
-            return new JSONObject().put("t", "arrayassign").put("name", assignment.name)
+            JSONObject saved = new JSONObject().put("t", "arrayassign").put("name", assignment.name)
                     .put("index", expr(assignment.index)).put("value", expr(assignment.value));
+            if (assignment.column != null) saved.put("column", expr(assignment.column));
+            return saved;
         }
         if (s instanceof ObjectArrayAssign) {
             ObjectArrayAssign assignment = (ObjectArrayAssign) s;
@@ -312,7 +334,8 @@ public final class AstJson {
         }
         if (s instanceof CompoundAssign) {
             CompoundAssign assignment = (CompoundAssign) s;
-            return new JSONObject().put("t", "intaddassign").put("name", assignment.name)
+            return new JSONObject().put("t", assignment.operation == CompoundAssign.Operation.ADD
+                    ? "intaddassign" : "intsubassign").put("name", assignment.name)
                     .put("value", expr(assignment.value));
         }
         if (s instanceof DecrementStmt) {
@@ -425,7 +448,9 @@ public final class AstJson {
                 for (int n = 0; n < cases.length(); n++) {
                     JSONObject c = cases.getJSONObject(n);
                     Object label = on == JType.STRING ? (Object) c.getString("label") : (Object) c.getInt("label");
-                    fill(sw.addCase(label).body, c.getJSONObject("body"));
+                    SwitchStmt.Case arm = sw.addCase(label);
+                    arm.setFallThrough(c.optBoolean("fallThrough", false));
+                    fill(arm.body, c.getJSONObject("body"));
                 }
                 if (o.has("default")) fill(sw.addDefault(), o.getJSONObject("default"));
                 return sw;
@@ -443,6 +468,7 @@ public final class AstJson {
                 return new ListAdd(o.getString("name"), exprFrom(o.getJSONObject("value")));
             case "arrayassign":
                 return new ArrayAssign(o.getString("name"), exprFrom(o.getJSONObject("index")),
+                        o.has("column") ? exprFrom(o.getJSONObject("column")) : null,
                         exprFrom(o.getJSONObject("value")));
             case "objectarrayassign":
                 return new ObjectArrayAssign(o.getString("name"), JType.valueOf(o.getString("element")),
@@ -452,6 +478,9 @@ public final class AstJson {
                         exprFrom(o.getJSONObject("value")));
             case "listremove":
                 return new ListRemove(o.getString("name"), exprFrom(o.getJSONObject("index")));
+            case "intsubassign":
+                return new CompoundAssign(o.getString("name"), CompoundAssign.Operation.SUBTRACT,
+                        exprFrom(o.getJSONObject("value")));
             case "intaddassign":
                 return new CompoundAssign(o.getString("name"), exprFrom(o.getJSONObject("value")));
             case "decrement":
@@ -508,7 +537,7 @@ public final class AstJson {
         if (e instanceof FarmhandRef) return new JSONObject().put("t", "farmer");
         if (e instanceof Literal) {
             Literal lit = (Literal) e;
-            Object v = lit.type == JType.DIRECTION ? ((Direction) lit.value).name() : lit.value;
+            Object v = lit.value instanceof Enum<?> constant ? constant.name() : lit.value;
             return new JSONObject().put("t", "lit").put("type", lit.type.name()).put("v", v == null ? JSONObject.NULL : v);
         }
         if (e instanceof VarRef) {
@@ -527,12 +556,33 @@ public final class AstJson {
             if (b.operandType != b.op().family.operand) o.put("num", b.operandType.name());
             return o;
         }
+        if (e instanceof StringConcat concat) {
+            return new JSONObject().put("t", "strconcat").put("l", expr(concat.left))
+                    .put("rightType", concat.right.type.name()).put("r", expr(concat.right));
+        }
+        if (e instanceof NewStringIntMap) return new JSONObject().put("t", "newstringintmap");
+        if (e instanceof StringIntMapCall call) {
+            return callJson("stringintmapcall", call.arguments).put("name", call.name).put("op", call.op.name());
+        }
+        if (e instanceof StringLength length) {
+            return new JSONObject().put("t", "strlen").put("e", expr(length.text));
+        }
+        if (e instanceof CropEquals comparison) {
+            return new JSONObject().put("t", "cropeq").put("l", expr(comparison.left)).put("r", expr(comparison.right));
+        }
         if (e instanceof StrEquals) {
             StrEquals eq = (StrEquals) e;
             return new JSONObject().put("t", "streq").put("l", expr(eq.left)).put("r", expr(eq.right));
         }
         if (e instanceof NewList) {
             return new JSONObject().put("t", "newlist");
+        }
+        if (e instanceof NewIntGrid grid) {
+            return new JSONObject().put("t", "newintgrid")
+                    .put("rows", expr(grid.rows)).put("columns", expr(grid.columns));
+        }
+        if (e instanceof IntArrayLiteral array) {
+            return callJson("intarrayliteral", array.elements());
         }
         if (e instanceof NewIntArray) {
             return new JSONObject().put("t", "newintarray").put("length", expr(((NewIntArray) e).length));
@@ -558,6 +608,14 @@ public final class AstJson {
             if (call.parameter != null) o.put("parameter", call.parameter);
             if (call.argument != null) o.put("argument", expr(call.argument));
             return o;
+        }
+        if (e instanceof FunctionValue function) {
+            return new JSONObject().put("t", "functionvalue").put("type", function.function.name())
+                    .put("callback", callbackJson(function.callback));
+        }
+        if (e instanceof FunctionCall function) {
+            return new JSONObject().put("t", "functioncall").put("type", function.function.name())
+                    .put("name", function.name).put("argument", expr(function.argument));
         }
         if (e instanceof StreamCall stream) {
             return streamJson(stream);
@@ -603,6 +661,13 @@ public final class AstJson {
     }
 
     private static JSONObject callbackJson(StreamCallback callback) throws JSONException {
+        if (callback instanceof FunctionVariable stored) {
+            return new JSONObject().put("t", "functionvariable").put("name", stored.name)
+                    .put("type", stored.function.name());
+        }
+        if (callback instanceof IntegerMethodRef reference) {
+            return new JSONObject().put("t", "integerref").put("kind", reference.kind.name());
+        }
         if (callback instanceof StreamMethodRef ref) {
             return new JSONObject().put("t", "methodref").put("receiver", ref.receiver).put("method", ref.method);
         }
@@ -628,6 +693,12 @@ public final class AstJson {
 
     private static StreamCallback callbackFrom(JSONObject saved) throws JSONException {
         String tag = saved.getString("t");
+        if (tag.equals("functionvariable")) {
+            return new FunctionVariable(saved.getString("name"), FunctionType.valueOf(saved.getString("type")));
+        }
+        if (tag.equals("integerref")) {
+            return new IntegerMethodRef(IntegerMethodRef.Kind.valueOf(saved.getString("kind")));
+        }
         if (tag.equals("methodref")) {
             return new StreamMethodRef(saved.getString("receiver"), saved.getString("method"));
         }
@@ -659,6 +730,7 @@ public final class AstJson {
                 if (type == JType.DOUBLE) return new Literal(type, o.getDouble("v"));
                 if (type == JType.STRING) return new Literal(type, o.getString("v"));
                 if (type == JType.DIRECTION) return new Literal(type, Direction.valueOf(o.getString("v")));
+                if (type == JType.CROP) return new Literal(type, Crop.valueOf(o.getString("v")));
                 throw new JSONException("Unsupported literal type " + type);
             }
             case "this": return new ThisRef();
@@ -683,10 +755,26 @@ public final class AstJson {
                 return new Binary(op, operands,
                         exprFrom(o.getJSONObject("l")), exprFrom(o.getJSONObject("r")));
             }
+            case "strconcat":
+                return new StringConcat(exprFrom(o.getJSONObject("l")), JType.valueOf(o.getString("rightType")),
+                        exprFrom(o.getJSONObject("r")));
+            case "newstringintmap":
+                return new NewStringIntMap();
+            case "stringintmapcall":
+                return new StringIntMapCall(o.getString("name"), StringIntMapCall.Op.valueOf(o.getString("op")),
+                        argumentsFrom(o));
+            case "strlen":
+                return new StringLength(exprFrom(o.getJSONObject("e")));
+            case "cropeq":
+                return new CropEquals(exprFrom(o.getJSONObject("l")), exprFrom(o.getJSONObject("r")));
             case "streq":
                 return new StrEquals(exprFrom(o.getJSONObject("l")), exprFrom(o.getJSONObject("r")));
             case "newlist":
                 return new NewList();
+            case "newintgrid":
+                return new NewIntGrid(exprFrom(o.getJSONObject("rows")), exprFrom(o.getJSONObject("columns")));
+            case "intarrayliteral":
+                return new IntArrayLiteral(argumentsFrom(o));
             case "newintarray":
                 return new NewIntArray(exprFrom(o.getJSONObject("length")));
             case "newobjectarray":
@@ -700,6 +788,12 @@ public final class AstJson {
                 return new CollectionCall(CollectionCall.Op.valueOf(o.getString("op")),
                         o.optString("receiver", null), o.optString("parameter", null),
                         o.has("argument") ? exprFrom(o.getJSONObject("argument")) : null);
+            case "functionvalue":
+                return new FunctionValue(FunctionType.valueOf(o.getString("type")),
+                        callbackFrom(o.getJSONObject("callback")));
+            case "functioncall":
+                return new FunctionCall(o.getString("name"), FunctionType.valueOf(o.getString("type")),
+                        exprFrom(o.getJSONObject("argument")));
             case "stream":
                 return streamFrom(o);
             case "access": {

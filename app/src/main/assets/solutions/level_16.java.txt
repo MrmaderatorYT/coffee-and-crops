@@ -1,0 +1,11 @@
+void run(Farmhand farmer) {
+    for (int i = 0; i < 7; i++) {
+        try {
+            farmer.water();
+        } catch (EmptyTankException e) {
+            farmer.refill();
+            farmer.water();
+        }
+        farmer.move(Direction.EAST);
+    }
+}

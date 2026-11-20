@@ -1,0 +1,28 @@
+class Program {
+    void run(Farmhand farmer) {
+        Worker worker = new Harvester(farmer);
+        worker.work();
+    }
+}
+
+class Worker {
+    Farmhand farmer = null;
+    Worker(Farmhand farmer) {
+        this.farmer = farmer;
+    }
+    void work() {
+    }
+}
+
+class Harvester extends Worker {
+    Harvester(Farmhand farmer) {
+        super(farmer);
+    }
+    @Override
+    void work() {
+        for (int i = 0; i < 6; i++) {
+            this.farmer.harvest();
+            this.farmer.move(Direction.EAST);
+        }
+    }
+}

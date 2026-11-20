@@ -1,0 +1,13 @@
+void run(Farmhand farmer) {
+    int[] row = farmer.scanRow();
+    ArrayList<Integer> list = new ArrayList<>();
+    for (int i = 0; i < row.length; i++) {
+        if (row[i] == 2) {
+            list.add(i);
+        }
+    }
+    for (int cell : list) {
+        farmer.walkTo(cell, 0);
+        farmer.harvest();
+    }
+}

@@ -1,5 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="lesson_help">Lesson hints</string>
+    <string name="lesson_hint_next">Next hint</string>
+    <string name="lesson_hint_restart">First hint</string>
+    <string name="lesson_hint_step">Hint %1$d of %2$d</string>
+    <string name="lesson_solution">Worked solution</string>
+    <string name="debug_variables">Variables</string>
+    <string name="debug_farmhand">Farmhand %1$d</string>
+    <string name="debug_no_variables">No variables in scope</string>
     <string name="app_name">Coffee &amp; Crops</string>
     <string name="language_name_en" translatable="false">English</string>
     <string name="language_name_uk" translatable="false">Українська</string>
@@ -18,6 +26,10 @@
     <string name="btn_all_levels">All levels</string>
     <string name="tagline">Guide a farmhand with real Java.</string>
     <string name="farm_hud_wheat">Wheat</string>
+    <string name="farm_hud_coffee">Coffee</string>
+    <string name="farm_hud_carrots">Carrots</string>
+    <string name="farm_sound_on">Sound on</string>
+    <string name="farm_sound_off">Sound off</string>
     <string name="farm_hud_watered">Watered</string>
     <string name="farm_hud_water">Water</string>
     <string name="level_progress">%1$d of %2$d levels complete</string>
@@ -30,6 +42,10 @@
     <string name="run_running">Running…</string>
     <string name="run_paused">Paused. Use Step or Resume.</string>
     <string name="run_success">✓ Level complete</string>
+    <string name="run_success_score">✓ Level complete · %1$d/3 stars · Best %2$d lines, %3$.1f action ticks. Improve on your first clear to earn extra stars.</string>
+    <string name="run_success_target">✓ Level complete · %1$d/3 stars · Best %2$d lines, %3$.1f action ticks. Star targets: %4$d lines and %5$.1f action ticks or fewer.</string>
+    <string name="sandbox_run_finished">Run finished. Reset to restore the farm.</string>
+    <string name="level_scored_title">%1$s · %2$s%3$s</string>
     <string name="run_error">✕ %1$s</string>
     <string name="run_speed">×%1$d</string>
     <string name="run_speed_description">Execution speed: %1$d times</string>
@@ -66,6 +82,25 @@
     <string name="editor_object_state">Objects: %1$s</string>
     <string name="editor_done">✓ Done</string>
     <string name="editor_delete">⌫ Delete</string>
+    <string name="editor_undo">Undo</string>
+    <string name="editor_redo">Redo</string>
+    <string name="editor_block_actions">Block actions</string>
+    <string name="editor_move_up">Move up</string>
+    <string name="editor_move_down">Move down</string>
+    <string name="editor_copy_block">Copy block</string>
+    <string name="editor_edit_blocked">This change would break the program</string>
+    <string name="editor_edit_failed">Could not edit this block</string>
+    <string name="editor_edit_text">Edit text</string>
+    <string name="editor_apply">Apply</string>
+    <string name="editor_rename_variable">Rename variable</string>
+    <string name="editor_invalid_variable">Enter a valid Java identifier.</string>
+    <string name="editor_name_conflict">This name would conflict with code in scope.</string>
+    <string name="editor_add_array_element">+ Element</string>
+    <string name="editor_remove_array_element">− Last element</string>
+    <string name="editor_enable_fall_through">Remove break</string>
+    <string name="editor_disable_fall_through">Restore break</string>
+    <string name="editor_tab_values">Values</string>
+    <string name="editor_tab_expressions">Expressions</string>
     <string name="editor_remove_not">remove !</string>
     <string name="editor_parameter">%1$s parameter</string>
     <string name="editor_tab_farm">Farm</string>

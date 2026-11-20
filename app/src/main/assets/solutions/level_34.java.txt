@@ -1,0 +1,22 @@
+class Program {
+    void run(Farmhand farmer) {
+        RowPlan[] rowPlans = new RowPlan[2];
+        rowPlans[0] = new RowPlan(1);
+        rowPlans[1] = new RowPlan(4);
+        for (int i = 0; i < rowPlans.length; i++) {
+            RowPlan rowPlan = rowPlans[i];
+            rowPlan.work(farmer);
+        }
+    }
+}
+
+class RowPlan {
+    int column = 0;
+    RowPlan(int column) {
+        this.column = column;
+    }
+    void work(Farmhand farmer) {
+        farmer.walkTo(this.column, 0);
+        farmer.harvest();
+    }
+}

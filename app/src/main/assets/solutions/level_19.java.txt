@@ -1,0 +1,14 @@
+class Program {
+    void run(Farmhand farmer) {
+        Counter counter = new Counter();
+        while (counter.value < 5) {
+            farmer.harvest();
+            counter.value = counter.value + 1;
+            farmer.move(Direction.EAST);
+        }
+    }
+}
+
+class Counter {
+    int value = 0;
+}

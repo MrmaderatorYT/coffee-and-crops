@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Coffee &amp; Crops</string>
+    <string name="language_name_en" translatable="false">English</string>
+    <string name="language_name_uk" translatable="false">Українська</string>
+    <string name="language_short_en" translatable="false">EN</string>
+    <string name="language_short_uk" translatable="false">УКР</string>
+    <string name="btn_run">▶ Run</string>
+    <string name="btn_pause">❚❚ Pause</string>
+    <string name="btn_resume">▶ Resume</string>
+    <string name="btn_step">Step</string>
+    <string name="step_target_any">Any</string>
+    <string name="step_target_farmer">#%1$d</string>
+    <string name="step_target_any_description">Step either farmhand. Tap to choose a farmhand.</string>
+    <string name="step_target_farmer_description">Step farmhand %1$d. Tap to choose a different farmhand.</string>
+    <string name="btn_reset">Reset</string>
+    <string name="btn_next_level">Next level ▶</string>
+    <string name="btn_all_levels">All levels</string>
+    <string name="tagline">Guide a farmhand with real Java.</string>
+    <string name="farm_hud_wheat">Wheat</string>
+    <string name="farm_hud_watered">Watered</string>
+    <string name="farm_hud_water">Water</string>
+    <string name="level_progress">%1$d of %2$d levels complete</string>
+    <string name="level_card_label">%1$s\n%2$s</string>
+    <string name="level_complete_title">✓ %1$s</string>
+    <string name="level_locked_title">%1$s · Locked</string>
+    <string name="run_information">Field notes</string>
+    <string name="run_empty">Add a line of Java to run().</string>
+    <string name="run_step_ready">Paused at the highlighted line. Tap Step to run it.</string>
+    <string name="run_running">Running…</string>
+    <string name="run_paused">Paused. Use Step or Resume.</string>
+    <string name="run_success">✓ Level complete</string>
+    <string name="run_error">✕ %1$s</string>
+    <string name="run_speed">×%1$d</string>
+    <string name="run_speed_description">Execution speed: %1$d times</string>
+    <string name="editor_caret">Next block goes here</string>
+    <string name="editor_program">Program</string>
+    <string name="editor_add_class">+ Class</string>
+    <string name="editor_add_interface">+ Interface</string>
+    <string name="editor_new_method_short">+ Method</string>
+    <string name="editor_add_field_short">+ Field</string>
+    <string name="editor_add_constructor_short">+ Constructor</string>
+    <string name="editor_open_method_description">Go to %1$s</string>
+    <string name="editor_open_field_description">Open field %1$s</string>
+    <string name="editor_open_constructor_description">Open constructor %1$s</string>
+    <string name="editor_open_class_method_description">Open method %1$s</string>
+    <string name="editor_open_signature_description">Open signature %1$s</string>
+    <string name="editor_create_method_title">New method</string>
+    <string name="editor_create_field_title">Add field</string>
+    <string name="editor_create_constructor_title">Add constructor</string>
+    <string name="editor_call_method">Call…</string>
+    <string name="editor_call_method_title">Call an existing method</string>
+    <string name="editor_method_call_description">Insert %1$s</string>
+    <string name="editor_class_name">Class name</string>
+    <string name="editor_interface_name">Interface name</string>
+    <string name="editor_new_class">New class</string>
+    <string name="editor_new_interface">New interface</string>
+    <string name="editor_base_class">Base class</string>
+    <string name="editor_no_base">No base class</string>
+    <string name="editor_create">Create</string>
+    <string name="editor_cancel">Cancel</string>
+    <string name="editor_invalid_class">Use a unique Java class name beginning with a capital letter.</string>
+    <string name="editor_invalid_interface">Use a unique Java interface name beginning with a capital letter.</string>
+    <string name="editor_fold">Collapse member</string>
+    <string name="editor_unfold">Expand member</string>
+    <string name="editor_object_state">Objects: %1$s</string>
+    <string name="editor_done">✓ Done</string>
+    <string name="editor_delete">⌫ Delete</string>
+    <string name="editor_remove_not">remove !</string>
+    <string name="editor_parameter">%1$s parameter</string>
+    <string name="editor_tab_farm">Farm</string>
+    <string name="editor_tab_loops">Loops</string>
+    <string name="editor_tab_conditions">Conditions</string>
+    <string name="editor_tab_variables">Variables</string>
+    <string name="editor_tab_methods">Methods</string>
+    <string name="editor_tab_exceptions">Exceptions</string>
+    <string name="editor_tab_objects">Objects</string>
+    <string name="editor_tab_threads">Threads</string>
+    <string name="editor_tab_streams">Streams</string>
+</resources>

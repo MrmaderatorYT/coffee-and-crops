@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="window_bg">#102622</color>
+    <color name="bar_bg">#162E28</color>
+    <color name="dialog_surface">#213A33</color>
+    <color name="control_bg">#244039</color>
+    <color name="control_border">#466058</color>
+    <color name="text_primary">#F4E8D2</color>
+    <color name="text_dim">#B9C6B2</color>
+    <color name="accent">#B6D5A0</color>
+    <color name="amber">#E4A760</color>
+    <color name="error">#F9ADA0</color>
+</resources>

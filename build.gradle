@@ -1,0 +1,4 @@
+// Groovy DSL on purpose: this project contains no Kotlin, including build scripts.
+plugins {
+    id 'com.android.application' version '8.11.1' apply false
+}

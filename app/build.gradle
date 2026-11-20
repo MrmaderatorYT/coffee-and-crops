@@ -1,0 +1,35 @@
+plugins {
+    id 'com.android.application'
+}
+
+android {
+    namespace 'com.ccs.coffee_n_crops'
+    compileSdk 36
+
+    defaultConfig {
+        applicationId 'com.ccs.coffee_n_crops'
+        minSdk 26
+        targetSdk 36
+        versionCode 1
+        versionName '0.1.0'
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_17
+        targetCompatibility JavaVersion.VERSION_17
+    }
+
+    bundle {
+        language {
+            // Both in-game languages must be available offline after installation.
+            enableSplit = false
+        }
+    }
+}
+
+dependencies {
+    implementation 'androidx.recyclerview:recyclerview:1.2.1'
+    testImplementation 'junit:junit:4.13.2'
+    // Android ships org.json; plain-JVM unit tests need their own copy.
+    testImplementation 'org.json:json:20240303'
+}

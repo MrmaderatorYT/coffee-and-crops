@@ -1,0 +1,279 @@
+{
+  "levels": {
+    "level_01": {
+      "title": "Рівень 1",
+      "goal": "Збери всю пшеницю на 5 клітинках і дійди до прапорця",
+      "hint": "Торкнися блока внизу, щоб додати його до run(). Цикл for повторює все, що стоїть між його фігурними дужками. Зупинися на трав’яній клітинці з помаранчевим прапорцем."
+    },
+    "level_02": {
+      "title": "Рівень 2",
+      "goal": "Збери врожай з обох рядів, використавши змінну int",
+      "hint": "Ряди однакової довжини. Збережи довжину в змінній. Додай int steps = 0;, задай потрібне значення, а тоді торкнися числа в циклі й заміни його на steps."
+    },
+    "level_03": {
+      "title": "Рівень 3",
+      "goal": "Збери стиглу пшеницю й полий паростки",
+      "hint": "Жнива знищують зелені паростки. Умова if із farmer.isRipe() перевірить, чи пшениця стигла. Поливай паростки в гілці else."
+    },
+    "level_04": {
+      "title": "Рівень 4",
+      "goal": "Оброби весь ряд за допомогою циклу while",
+      "hint": "Використай while із умовою farmer.canMove(Direction.EAST). Темний ґрунт уже политий, а повторний полив губить рослину. У гілці else if перевіряй farmer.isDry()."
+    },
+    "level_05": {
+      "title": "Рівень 5",
+      "goal": "Збери пшеницю навколо ставка за допомогою for-each",
+      "hint": "Direction.values() повертає NORTH, EAST, SOUTH, WEST — один обхід навколо ставка. Перебери ці значення в циклі. Торкнися напрямку в коді й підстав замість нього змінну циклу."
+    },
+    "level_06": {
+      "title": "Рівень 6",
+      "goal": "Датчики вимкнено. Скористайся схемою посіву",
+      "hint": "Ряд повторюється через три клітинки. Спочатку стигла пшениця, потім паросток, потім трава. Вираз i % 3 вказує на поточну клітинку. Використай його у switch."
+    },
+    "level_07": {
+      "title": "Рівень 7",
+      "goal": "Проскануй ряд у масив int[] й оброби його",
+      "hint": "farmer.scanRow() повертає число для кожної клітинки. 2 означає стиглу пшеницю, 1 — паросток, 0 — порожню клітинку. Перебирай i від 0, поки i < row.length. Переходь на клітинку i й обирай дію за row[i]."
+    },
+    "level_08": {
+      "title": "Рівень 8",
+      "goal": "Проскануй усе поле у двовимірний масив int[][]",
+      "hint": "У field[y][x] індекс y вибирає ряд, а x — стовпець. field.length дає кількість рядів, а field[0].length — кількість стовпців. Вклади один цикл в інший і переходь лише на клітинки, які треба обробити."
+    },
+    "level_09": {
+      "title": "Рівень 9",
+      "goal": "Запиши позиції стиглої пшениці в ArrayList і відвідай їх",
+      "hint": "Під час першого обходу викликай list.add(i) для кожного i, де row[i] == 2. Потім перебери список циклом for-each і збери пшеницю на кожній збереженій клітинці."
+    },
+    "level_10": {
+      "title": "Рівень 10",
+      "goal": "Полий усі паростки водою з бака на 1,5 л",
+      "hint": "На один полив іде 0,5 л. Якщо бак порожній, полив зупинить програму. farmer.getWater() повертає double. Наповнюй бак лише за умови farmer.getWater() < 0.5."
+    },
+    "level_11": {
+      "title": "Рівень 11",
+      "goal": "Дізнайся, що росте на поточній клітинці",
+      "hint": "farmer.getCrop() повертає один із рядків «wheat», «sprout», «watered» або «grass». Для вибору дії скористайся switch або порівняй рядки через .equals(). Оператор == порівнює посилання на рядки."
+    },
+    "level_12": {
+      "title": "Рівень 12 · Методи",
+      "goal": "Збери врожай із трьох рядів одним методом",
+      "hint": "Кнопкою «+ Метод» додай void harvestRow(Farmhand farmer). Усередині створи цикл для жнив на п’яти клітинках. Натисни run() над кодом, щоб повернутися. На початку кожного ряду встав harvestRow(farmer) з палітри. Кожен метод має власні локальні змінні."
+    },
+    "level_13": {
+      "title": "Рівень 13 · Повернення значень",
+      "goal": "Порахуй стиглу пшеницю в методі, а потім збери її",
+      "hint": "Кнопкою «+ Метод» додай int countRipe(Farmhand farmer). Проскануй ряд, порахуй значення 2 й поверни їхню кількість. У run() натисни «Виклик…», щоб зберегти результат countRipe(farmer) у змінну int і використати її як межу циклу жнив. Оператор return завершує метод і повертає результат."
+    },
+    "level_14": {
+      "title": "Рівень 14 · Параметри",
+      "goal": "Оброби три різні ряди через tendRow(farmer, y)",
+      "hint": "Додай void tendRow(Farmhand farmer, int y). Перебери шість стовпців і на кожному переходь до (i, y), збирай стиглу пшеницю та поливай сухі паростки. У run() перебери ряди й передай змінну циклу до tendRow(farmer, y). Кожен виклик отримує своє значення y."
+    },
+    "level_15": {
+      "title": "Рівень 15 · Рекурсія",
+      "goal": "Збирай пшеницю до краю, повторно викликаючи метод",
+      "hint": "Додай void walkToEdge(Farmhand farmer). Збирай пшеницю на стиглій клітинці. Якщо можна рухатися на схід, зроби крок у напрямку EAST і знову виклич walkToEdge(farmer). На краю припини виклики. У run() виклич метод один раз. Покрокове виконання покаже кожен виклик і повернення."
+    },
+    "level_16": {
+      "title": "Рівень 16 · Перехоплення винятку",
+      "goal": "Полий сім паростків, поповнюючи порожній бак",
+      "hint": "На початку бак на 1 л порожній. У циклі for на сім кроків помісти farmer.water() у try. У catch (EmptyTankException e) наповни бак і повтори полив. Після catch зроби крок у напрямку EAST. Після винятку Java пропускає решту блоку try. Рядок із помилкою можна повторити в catch."
+    },
+    "level_17": {
+      "title": "Рівень 17 · Пошук краю",
+      "goal": "Збирай пшеницю, доки рух не спричинить виняток",
+      "hint": "Визнач край без датчика. Усередині try створи while (true) і в ньому збирай пшеницю та рухайся в напрямку EAST. Спроба вийти за межі поля спричинить OutOfBoundsFarmException і перерве цикл. Перехопи виняток після циклу. Достатньо порожнього catch. Фермер залишиться на останній клітинці."
+    },
+    "level_18": {
+      "title": "Рівень 18 · Повернення додому",
+      "goal": "Збери пшеницю до краю й повернися додому через finally",
+      "hint": "Помісти цикл жнив і руху в try. Перехопи OutOfBoundsFarmException і додай у catch команду return;. Додай finally з викликом farmer.walkTo(0, 0). Навіть під час return блок finally виконається до виходу з методу. Пройди покроково через catch і finally."
+    },
+    "level_19": {
+      "title": "Рівень 19 · Класи й поля",
+      "goal": "Керуй жнивами через поле об’єкта Counter",
+      "hint": "Створи клас Counter і кнопкою «+ Поле» додай int value = 0. У вкладці програми створи Counter counter = new Counter(). Повторюй, поки counter.value < 5. Збирай пшеницю, збільшуй counter.value на 1 і рухайся в напрямку EAST. Поле належить об’єкту й доступне за його посиланням."
+    },
+    "level_20": {
+      "title": "Рівень 20 · Конструктори",
+      "goal": "Задай двом об’єктам RowPlan різні ряди й ширину",
+      "hint": "У вкладці RowPlan кнопкою «+ Поле» додай int row та int width. Натисни «+ Конструктор» і додай у ньому два параметри int та присвоєння this.row = row; і this.width = width;. У програмі створи плани (0, 3) і (1, 5). Для кожного plan збирай пшеницю в ряду plan.row, починаючи зі стовпця 0, поки індекс менший за plan.width. Кожен об’єкт зберігає власні значення полів."
+    },
+    "level_21": {
+      "title": "Рівень 21 · Методи екземпляра",
+      "goal": "Доручи кожному Worker обробити свій ряд",
+      "hint": "У вкладці Worker кнопкою «+ Поле» додай Farmhand farmer та int row. Передай обидва значення в конструктор і збережи їх у this.farmer та this.row. Кнопкою «+ Метод» додай void work() і перебери в ньому шість стовпців. Через this.farmer переходь до (i, this.row), збирай стиглу пшеницю або поливай сухі паростки. У програмі створи по одному Worker на ряд і виклич worker.work() для кожного."
+    },
+    "level_22": {
+      "title": "Рівень 22 · Успадкування",
+      "goal": "Виклич Harvester.work() через посилання типу Worker",
+      "hint": "Створи Worker із полем Farmhand, конструктором і методом void work(). Створи Harvester extends Worker. Почни його конструктор із super(farmer). Перевизнач work() через @Override і додай цикл жнив на шести клітинках, використовуючи успадковане this.farmer. У програмі оголоси Worker worker = new Harvester(farmer); і виклич worker.work(). Версію work() визначає клас самого об’єкта."
+    },
+    "level_23": {
+      "title": "Рівень 23 · Додавання з присвоєнням",
+      "goal": "Збери пшеницю через одну клітинку",
+      "hint": "Почни з int steps = 0. Поки steps < 7, переходь до (steps, 0) і збирай пшеницю. Потім виконай steps += 2, щоб перейти до наступної позиції врожаю."
+    },
+    "level_24": {
+      "title": "Рівень 24 · Зворотний відлік",
+      "goal": "Збирай пшеницю зі сходу на захід за допомогою --",
+      "hint": "Почни з int steps = 5. Поки steps >= 0, переходь до (steps, 0), збирай пшеницю і виконуй steps--. Зупинися біля західного прапорця."
+    },
+    "level_25": {
+      "title": "Рівень 25 · Спочатку дія, потім перевірка",
+      "goal": "Збери ряд пшениці циклом do-while",
+      "hint": "У do { ... } додай жнива й крок на схід. Торкнися умови внизу й підстав farmer.canMove(Direction.EAST). Тіло циклу виконується перед першою перевіркою."
+    },
+    "level_26": {
+      "title": "Рівень 26 · Вихід із циклу",
+      "goal": "Заверши нескінченний цикл на краю поля",
+      "hint": "Почни з while (true). Після жнив додай if (!farmer.canMove(Direction.EAST)) і помісти в нього break. Після if зроби крок на схід. break завершує найближчий цикл."
+    },
+    "level_27": {
+      "title": "Рівень 27 · Пропуск через continue",
+      "goal": "Оминай паростки й порожні клітинки",
+      "hint": "Перебирай i від 0 до 7 й переходь до (i, 0). Якщо під фермером немає стиглої пшениці, виконай continue, щоб перейти до наступної ітерації. Команда жнив має стояти після блоку if."
+    },
+    "level_28": {
+      "title": "Рівень 28 · Створення масиву",
+      "goal": "Познач ділянку з п’яти клітинок довжиною масиву",
+      "hint": "Створи int[] row = new int[5]. Додай цикл for з умовою i < row.length. Переходь до (i, 0) і збирай пшеницю. Початкове значення кожного елемента нового масиву int дорівнює нулю."
+    }
+  },
+  "messages": {
+    "Finish on the tile marked with the orange flag.": "Зупинися на клітинці з помаранчевим прапорцем.",
+    "All the wheat is in, but this level asks for a variable. Declare an int and use it in place of a number.": "Урожай зібрано. Щоб пройти рівень, оголоси змінну int і підстав її замість числа.",
+    "All the wheat is in, but this level asks for a for-each loop over Direction.values().": "Урожай зібрано. Для цього рівня перебери Direction.values() за допомогою циклу for-each.",
+    "The row is tended, but this level asks you to read the scan with row[i].": "Ряд оброблено. Щоб пройти рівень, прочитай результати сканування через row[i].",
+    "The field is tended, but this level asks you to read the scan with field[y][x].": "Поле оброблено. Щоб пройти рівень, прочитай результати сканування через field[y][x].",
+    "All the wheat is in, but this level asks you to add the ripe tiles to an ArrayList and then loop over that list.": "Урожай зібрано. Для цього рівня додай позиції стиглої пшениці до ArrayList і перебери цей список у циклі.",
+    "The wheat is in. Put the row's harvest code in one void method, then call that method for all three rows from run().": "Урожай зібрано. Помісти код жнив одного ряду в метод void і виклич його з run() для всіх трьох рядів.",
+    "Count the scan's ripe entries in an int method, return that count, and use the returned value to control the harvest loop in run().": "У методі з результатом типу int порахуй стиглі клітинки й поверни отримане число. У run() використай його як межу циклу жнив.",
+    "Use one method with an int parameter for the row. Read that parameter inside the method and call it from run()'s row loop.": "Додай метод із параметром int для номера ряду. Використай параметр усередині методу й викликай цей метод у циклі обходу рядів у run().",
+    "Keep going until the eastern edge.": "Продовжуй до східного краю поля.",
+    "Put the harvest and movement in a method that calls itself, and start it with one call from run().": "Додай жнива й рух у метод, який викликає сам себе. Зроби один початковий виклик цього методу з run().",
+    "Recover from EmptyTankException in catch: refill, then retry watering that same tile. Refilling before try skips this lesson.": "Перехопи EmptyTankException у catch. У цьому блоці наповни бак і повтори полив тієї самої клітинки.",
+    "Finish on the eastern edge of the field.": "Зупинися на східному краю поля.",
+    "Find the edge by catching OutOfBoundsFarmException. Put try around the whole loop, so catching the failed move ends the loop.": "Щоб знайти край поля, перехопи OutOfBoundsFarmException. Обгорни весь цикл блоком try, щоб невдалий крок завершив цикл.",
+    "Put farmer.walkTo(0, 0) in finally so the farmer comes home even after return.": "Додай farmer.walkTo(0, 0) у finally, щоб фермер повертався додому навіть під час return.",
+    "Use a finally block to walk home, and return from the catch arm. A line after try is skipped by return; finally is still executed.": "Додай повернення додому в finally, а return — у гілку catch. Команда return пропускає рядки після try, і блок finally усе одно виконується.",
+    "Reach the edge and handle its exception before returning through finally.": "Дійди до краю, перехопи виняток і повернися додому через finally.",
+    "Create a Counter object, update its int field during the run, and read that field in the harvest loop's condition.": "Створи об’єкт Counter, змінюй його поле int під час виконання й читай це поле в умові циклу жнив.",
+    "Construct two RowPlan objects with separate row and width values. Initialize both fields with this in the constructor and read them in Program.": "Створи два об’єкти RowPlan із різними значеннями row та width. Ініціалізуй обидва поля через this у конструкторі й прочитай їх у програмі.",
+    "Use two Worker instances and call an instance method on each. That method should use this and the object's Farmhand field to tend its own row.": "Створи два екземпляри Worker і виклич метод для кожного. Метод має обробляти ряд свого об’єкта, використовуючи this і поле типу Farmhand.",
+    "Construct a subclass with super(...), override its work() method, and invoke it through a variable declared with the base class's type.": "Створи об’єкт підкласу з викликом super(...), перевизнач метод work() і виклич його через змінну типу базового класу.",
+    "Use assert farmer.isRipe(); before cutting wheat.": "Перед жнивами додай assert farmer.isRipe();",
+    "A sprout was ruined. Leave the young plants intact.": "Паросток загинув. Бережи молоді рослини.",
+    "Use += to advance the counter.": "Збільшуй лічильник за допомогою +=.",
+    "Use -- to count down to the first tile.": "Зменшуй лічильник за допомогою --, доки не дійдеш до першої клітинки.",
+    "Use do-while to tend the current tile before testing the next move.": "Використай do-while, щоб спочатку обробити поточну клітинку, а потім перевірити наступний крок.",
+    "Use break at the edge to exit the loop.": "Використай break на краю поля, щоб завершити цикл.",
+    "Use continue to skip a tile before harvesting.": "Використай continue перед жнивами, щоб пропустити клітинку.",
+    "Allocate the work array with new int[5].": "Створи масив для роботи за допомогою new int[5].",
+    "Write the crop positions into the array before visiting them.": "Спочатку запиши позиції пшениці в масив, а потім відвідай їх.",
+    "Use contains to check whether a column should be skipped.": "За допомогою contains перевіряй, чи треба пропустити стовпець.",
+    "Use set to replace the route entry for the sprout.": "Заміни позицію паростка в маршруті за допомогою set.",
+    "Use remove(index) before iterating the route.": "Скористайся remove(index) перед тим, як перебирати маршрут.",
+    "There is still ripe wheat to harvest. Use += to advance the counter.": "На полі ще є стигла пшениця. Збільшуй лічильник за допомогою +=.",
+    "There is still ripe wheat to harvest. Use -- to count down to the first tile.": "На полі ще є стигла пшениця. Зменшуй лічильник за допомогою --, доки не дійдеш до першої клітинки.",
+    "There is still ripe wheat to harvest. Use do-while to tend the current tile before testing the next move.": "На полі ще є стигла пшениця. Використай do-while, щоб спочатку обробити поточну клітинку, а потім перевірити наступний крок.",
+    "There is still ripe wheat to harvest. Use break at the edge to exit the loop.": "На полі ще є стигла пшениця. Використай break на краю поля, щоб завершити цикл.",
+    "There is still ripe wheat to harvest. Use continue to skip a tile before harvesting.": "На полі ще є стигла пшениця. Використай continue перед жнивами, щоб пропустити клітинку.",
+    "There is still ripe wheat to harvest. Allocate the work array with new int[5].": "На полі ще є стигла пшениця. Створи масив для роботи за допомогою new int[5].",
+    "There is still ripe wheat to harvest. Write the crop positions into the array before visiting them.": "На полі ще є стигла пшениця. Спочатку запиши позиції пшениці в масив, а потім відвідай їх.",
+    "There is still ripe wheat to harvest. Use contains to check whether a column should be skipped.": "На полі ще є стигла пшениця. За допомогою contains перевіряй, чи треба пропустити стовпець.",
+    "There is still ripe wheat to harvest. Use set to replace the route entry for the sprout.": "На полі ще є стигла пшениця. Заміни позицію паростка в маршруті за допомогою set.",
+    "There is still ripe wheat to harvest. Use remove(index) before iterating the route.": "На полі ще є стигла пшениця. Скористайся remove(index) перед тим, як перебирати маршрут."
+  },
+  "templates": [
+    {
+      "pattern": "\\QThe program finished, but \\E(\\d+)\\Q ripe wheat is still in the field.\\E",
+      "replacement": "Програма завершилася, та на полі ще є стигла пшениця. Клітинок до жнив — $1."
+    },
+    {
+      "pattern": "\\QEvery sprout is watered, but the farmer refilled \\E(\\d+)\\Q times and \\E(\\d+)\\Q are enough. Refill only if farmer.getWater() < 0.5.\\E",
+      "replacement": "Усі паростки полито. Кількість поповнень бака — $1, хоча достатньо $2. Наповнюй його лише за умови farmer.getWater() < 0.5."
+    },
+    {
+      "pattern": "\\QAll the sprouts are watered, but \\E(\\d+)\\Q refills are enough. Refill only in the EmptyTankException catch arm.\\E",
+      "replacement": "Усі паростки полито. Достатньо стількох поповнень бака — $1. Наповнюй бак лише в гілці catch для EmptyTankException."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat was ruined: cut before it was ripe, or watered twice. Check farmer.isRipe() before harvesting.\\E",
+      "replacement": "Загиблі паростки — $1. Причиною могли бути жнива до дозрівання або повторний полив. Перед жнивами перевіряй farmer.isRipe()."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat still needs water. Call farmer.water() in the else branch.\\E",
+      "replacement": "Паростки, які ще треба полити — $1. Викликай farmer.water() у гілці else."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat was ruined: cut before it was ripe, or watered twice. Harvest only if farmer.isRipe(), and water only if farmer.isDry().\\E",
+      "replacement": "Загиблі паростки — $1. Причиною могли бути жнива до дозрівання або повторний полив. Для жнив перевіряй farmer.isRipe(), а для поливу — farmer.isDry()."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat still needs water. Water it in an else if (farmer.isDry()) arm.\\E",
+      "replacement": "Паростки, які ще треба полити — $1. Поливай у гілці else if (farmer.isDry())."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat was ruined: cut before it was ripe, or watered twice. Harvest only where i % 3 is 0.\\E",
+      "replacement": "Загиблі паростки — $1. Причиною могли бути жнива до дозрівання або повторний полив. Збирай пшеницю там, де i % 3 == 0."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat still needs water. Water where i % 3 is 1.\\E",
+      "replacement": "Паростки, які ще треба полити — $1. Поливай там, де i % 3 == 1."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat was ruined: cut before it was ripe, or watered twice. Harvest only where row[i] == 2.\\E",
+      "replacement": "Загиблі паростки — $1. Причиною могли бути жнива до дозрівання або повторний полив. Збирай пшеницю там, де row[i] == 2."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat still needs water. Water where row[i] == 1.\\E",
+      "replacement": "Паростки, які ще треба полити — $1. Поливай там, де row[i] == 1."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat was ruined: cut before it was ripe, or watered twice. Harvest only where field[y][x] == 2.\\E",
+      "replacement": "Загиблі паростки — $1. Причиною могли бути жнива до дозрівання або повторний полив. Збирай пшеницю там, де field[y][x] == 2."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat still needs water. Water where field[y][x] == 1.\\E",
+      "replacement": "Паростки, які ще треба полити — $1. Поливай там, де field[y][x] == 1."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat was ruined: cut before it was ripe, or watered twice. Water each sprout once.\\E",
+      "replacement": "Загиблі паростки — $1. Причиною могли бути жнива до дозрівання або повторний полив. Поливай кожен паросток один раз."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat still needs water. Keep going to the end of the row.\\E",
+      "replacement": "Паростки, які ще треба полити — $1. Дійди до кінця ряду."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat was ruined: cut before it was ripe, or watered twice. Harvest only when the crop is \"wheat\", and water only a \"sprout\".\\E",
+      "replacement": "Загиблі паростки — $1. Причиною могли бути жнива до дозрівання або повторний полив. Збирай пшеницю лише для значення \"wheat\", а поливай лише для значення \"sprout\"."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat still needs water. Water it in the \"sprout\" case.\\E",
+      "replacement": "Паростки, які ще треба полити — $1. Поливай у гілці case \"sprout\"."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat was ruined: cut before it was ripe, or watered twice. Check isRipe() inside your method.\\E",
+      "replacement": "Загиблі паростки — $1. Причиною могли бути жнива до дозрівання або повторний полив. Перевіряй isRipe() усередині свого методу."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat still needs water. Water only when isDry() is true.\\E",
+      "replacement": "Паростки, які ще треба полити — $1. Поливай, лише коли isDry() повертає true."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat was ruined: cut before it was ripe, or watered twice. Water each sprout exactly once.\\E",
+      "replacement": "Загиблі паростки — $1. Причиною могли бути жнива до дозрівання або повторний полив. Поливай кожен паросток рівно один раз."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat still needs water. After refilling in catch, call farmer.water() again before moving.\\E",
+      "replacement": "Паростки, які ще треба полити — $1. Після поповнення бака в catch знову виклич farmer.water() перед рухом."
+    },
+    {
+      "pattern": "(\\d+)\\Q young wheat was ruined: cut before it was ripe, or watered twice. Check isRipe() inside Worker.work().\\E",
+      "replacement": "Загиблі паростки — $1. Причиною могли бути жнива до дозрівання або повторний полив. Перевіряй isRipe() усередині Worker.work()."
+    }
+  ]
+}

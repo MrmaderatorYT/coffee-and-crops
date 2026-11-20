@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ripple xmlns:android="http://schemas.android.com/apk/res/android"
+    android:color="#46F4E8D2">
+    <item>
+        <selector>
+            <item android:state_enabled="false">
+                <shape>
+                    <solid android:color="@color/bar_bg" />
+                    <corners android:radius="12dp" />
+                </shape>
+            </item>
+            <item android:state_selected="true">
+                <shape>
+                    <solid android:color="@color/control_bg" />
+                    <stroke android:width="1dp" android:color="@color/accent" />
+                    <corners android:radius="12dp" />
+                </shape>
+            </item>
+            <item>
+                <shape>
+                    <solid android:color="@color/control_bg" />
+                    <stroke android:width="1dp" android:color="@color/control_border" />
+                    <corners android:radius="12dp" />
+                </shape>
+            </item>
+        </selector>
+    </item>
+</ripple>

@@ -1,0 +1,208 @@
+{
+  "levels": {
+    "level_29": {
+      "title": "Рівень 29 · Запис у масив",
+      "goal": "Запиши в масив три зупинки й збери на них урожай",
+      "hint": "Створи масив int із трьох елементів. Запиши 1, 4 і 6 у row[0], row[1] і row[2]. Обійди збережені стовпці циклом for-each і збери врожай."
+    },
+    "level_30": {
+      "title": "Рівень 30 · Пошук у списку",
+      "goal": "Пропусти стовпці, у яких ростуть паростки",
+      "hint": "Додай 1, 4 і 6 до списку. Перебери всі вісім стовпців і переходь на клітинку та збирай урожай лише за умови !list.contains(i). У стовпцях зі списку ростуть паростки."
+    },
+    "level_31": {
+      "title": "Рівень 31 · Заміна елемента списку",
+      "goal": "Виправ одну зупинку в маршруті збирання врожаю",
+      "hint": "Створи список зі стовпцями 1, 2 і 5 у такому порядку. Елемент з індексом 1 веде до паростка. Заміни його на стовпець 3 викликом list.set(1, 3). Потім збери врожай у кожному стовпці зі списку."
+    },
+    "level_32": {
+      "title": "Рівень 32 · Видалення зі списку",
+      "goal": "Вилучи з маршруту зупинку з паростком",
+      "hint": "Створи список зі стовпцями 0, 1, 3 і 5 у такому порядку. Перед циклом for-each видали елемент з індексом 1 викликом list.remove(1). Наступні елементи зсунуться ліворуч."
+    },
+    "level_33": {
+      "title": "Рівень 33 · Інтерфейси",
+      "goal": "Збери врожай через посилання типу Tool",
+      "hint": "Клас Harvester уже вміє збирати врожай. Створи інтерфейс Tool і кнопкою «+ Метод» додай «void work();». На вкладці Harvester додай implements Tool. На вкладці «Програма» оголоси «Tool tool = new Harvester(farmer);» і виклич tool.work()."
+    },
+    "level_34": {
+      "title": "Рівень 34 · Масиви об’єктів",
+      "goal": "Збережи два об’єкти RowPlan і збери врожай за їхніми маршрутами",
+      "hint": "Клас RowPlan уже готовий. Створи масив «RowPlan[] rowPlans = new RowPlan[2];». Запиши new RowPlan(1) і new RowPlan(4) за індексами 0 і 1. Перебери масив до rowPlans.length, отримай поточний план рядком «RowPlan rowPlan = rowPlans[i];» і виклич rowPlan.work(farmer). Елементи нового масиву спочатку містять null."
+    },
+    "level_35": {
+      "title": "Рівень 35 · Поліморфізм",
+      "goal": "Збери врожай і полий паросток в одному циклі",
+      "hint": "Типи Tool, Harvester і Waterer уже готові. Створи масив «Tool[] tools = new Tool[2];». Запиши в нього об’єкти Harvester і Waterer. У циклі for (Tool tool : tools) один раз запиши виклик tool.work(). Для кожного об’єкта виконається його реалізація методу."
+    },
+    "level_36": {
+      "title": "Рівень 36 · Методи Object",
+      "goal": "Перевір через Object.equals(), чи обидва посилання ведуть до того самого об’єкта",
+      "hint": "Додай рядки «Object object = new Parcel();» і «Object object2 = object;». Обидві змінні тепер посилаються на той самий об’єкт. Постав object.equals(object2) в умову if і збери врожай у цій гілці. У палітрі також є методи hashCode(), toString() і getClass()."
+    },
+    "level_37": {
+      "title": "Рівень 37 · instanceof",
+      "goal": "Перевір фактичний тип об’єкта за посиланням типу Object",
+      "hint": "Додай рядок «Object object = new Harvester();». Задай умову if як object instanceof Harvester і збери врожай у цій гілці. Оператор перевіряє фактичний клас об’єкта. Спробуй створити Waterer, щоб побачити, як програма пропустить цю гілку."
+    },
+    "level_38": {
+      "title": "Рівень 38 · Незалежні об’єкти",
+      "goal": "Створи два об’єкти Route і зміни поле лише в одному з них",
+      "hint": "Клас Route має поле column і конструктор. На вкладці Route додай до конструктора рядок «this.column = column;». На вкладці «Програма» створи два об’єкти через new Route(1), а потім збільш лише route2.column. Перейди до стовпця, заданого кожним об’єктом, у рядку 0 та збери врожай."
+    },
+    "level_39": {
+      "title": "Рівень 39 · final і static",
+      "goal": "Використай константу класу як незмінну межу циклу",
+      "hint": "На вкладці Route додай рядок «static final int STOPS = 3;». На вкладці «Програма» додай «final int stops = Route.STOPS;». Використай stops як верхню межу циклу for. На кожній ітерації збирай врожай і рухайся на схід до прапорця."
+    },
+    "level_40": {
+      "title": "Рівень 40 · Ітератор",
+      "goal": "Відвідай три зупинки за допомогою ітератора",
+      "hint": "Список stops містить стовпці 1, 4 і 6. Створи ітератор «Iterator<Integer> route = stops.iterator();». У циклі while (route.hasNext()) зчитай наступний стовпець рядком «int column = route.next();», перейди до (column, 0) і збери врожай. Метод hasNext() перевіряє наявність елемента й залишає ітератор на поточній позиції."
+    },
+    "level_41": {
+      "title": "Рівень 41 · Optional",
+      "goal": "Використай запасний стовпець, якщо в маршруті немає зупинки",
+      "hint": "Створи порожнє значення «Optional<Integer> stop = Optional.empty();». Отримай стовпець рядком «int column = stop.orElse(3);». Перейди до (column, 0) і збери врожай. Метод orElse повертає збережене значення, якщо Optional його містить."
+    },
+    "level_42": {
+      "title": "Рівень 42 · Потоки даних",
+      "goal": "Знайди першу зупинку у стовпці 4 або далі",
+      "hint": "Зупинки розташовані у стовпцях 1, 3 і 5. Додай stops.stream().filter(cell -> cell >= 0).findFirst(). Торкнися числа 0 в умові фільтра й зміни його на 4. Отримай результат через orElse(0), перейди до знайденого стовпця і збери врожай. Метод findFirst() повертає Optional і може завершити пошук одразу після першого збігу."
+    },
+    "level_43": {
+      "title": "Рівень 43 · Перевірка assert",
+      "goal": "Перевір стиглість пшениці перед збиранням",
+      "hint": "Повтори тричі. Додай «assert farmer.isRipe();», збери врожай і рухайся на схід (EAST). Спробуй перенести assert після збирання, щоб побачити помилку. У грі перевірки assert увімкнені, як із java -ea. Після двокрапки можна додати повідомлення."
+    },
+    "level_44": {
+      "title": "Рівень 44 · synchronized",
+      "goal": "Захисти спільний лічильник одним монітором",
+      "hint": "Кожне з двох фонових завдань виконує три ітерації. В обох циклах додай блок synchronized (counter), а в ньому рядок «counter.total = counter.total + 1;». Читання та запис відбуватимуться під одним блокуванням. Коли обидва завдання завершаться, фермер піде до стовпця з номером, який дорівнює спільному підсумку."
+    },
+    "level_45": {
+      "title": "Рівень 45 · volatile",
+      "goal": "Передай номер стовпця між двома завданнями",
+      "hint": "Перше завдання записує номер стовпця, а потім встановлює ready. Друге чекає на ready, перш ніж читати номер. На вкладці Signal додай volatile до ready. Коли друге завдання прочитає true, воно також побачить записаний раніше номер стовпця."
+    },
+    "level_46": {
+      "title": "Рівень 46 · Атомарний лічильник",
+      "goal": "Збільшуй спільний AtomicInteger з двох завдань",
+      "hint": "Додай «counter.incrementAndGet();» до кожного фонового завдання. Кожен виклик збільшує спільне значення однією атомарною операцією. Фермер читає counter.get(), щоб знайти врожай."
+    },
+    "level_47": {
+      "title": "Рівень 47 · Лямбда для кожної зупинки",
+      "goal": "Збери врожай на всіх зупинках за допомогою лямбди з блоком",
+      "hint": "Список містить стовпці 1, 3 і 5. Додай stops.stream().forEach(cell -> { }). У фігурних дужках перейди до (cell, 0) і збери врожай. Лямбда виконається один раз для кожної зупинки."
+    },
+    "level_48": {
+      "title": "Рівень 48 · Перетворення через map",
+      "goal": "Зсунь маршрут на два стовпці на схід",
+      "hint": "Список містить зміщення 0, 2 і 4. Додай map і зміни його лямбду на cell -> cell + 2. У блоці forEach перейди до (cell, 0) і збери врожай. Лямбда всередині forEach отримає перетворені номери стовпців 2, 4 і 6."
+    },
+    "level_49": {
+      "title": "Рівень 49 · Підрахунок збігів",
+      "goal": "Переконайся, що три зупинки проходять фільтр",
+      "hint": "Залиши зупинки у стовпці 2 або далі через filter(cell -> cell >= 2). Виклич count() і збережи результат типу long. Збирай врожай під фермером лише в блоці if (count == 3L). Суфікс L позначає літерал типу long."
+    },
+    "level_50": {
+      "title": "Рівень 50 · Перевірка через anyMatch",
+      "goal": "Збери врожай, якщо маршрут містить стовпець 4",
+      "hint": "Задай лямбду anyMatch як cell -> cell == 4 і збережи результат типу boolean. Збери врожай під фермером у блоці if (found). Метод anyMatch завершує пошук, щойно знаходить зупинку, яка відповідає умові."
+    },
+    "level_51": {
+      "title": "Рівень 51 · Посилання на метод",
+      "goal": "Скопіюй зупинки в другий маршрут",
+      "hint": "Виклич stops.stream().forEach(route::add), щоб скопіювати кожну зупинку в порожній список route. Посилання route::add викликає метод add саме для цього списку. Перебери route циклом for-each, переходь до (cell, 0) і збирай врожай на кожній зупинці."
+    },
+    "level_52": {
+      "title": "Рівень 52 · Ланцюжок операцій",
+      "goal": "Зсунь маршрут і залиш лише зупинки зі стиглою пшеницею",
+      "hint": "Список містить зміщення від 0 до 4. Перетвори їх на номери стовпців через map(cell -> cell + 1). Потім застосуй filter(cell -> cell >= 4), щоб оминути паростки. Усередині forEach переходь до кожного зі стовпців, що залишилися, у рядку 0 і збирай врожай."
+    },
+    "level_53": {
+      "title": "Рівень 53 · Два фермери",
+      "goal": "Збери по три одиниці врожаю кожним фермером",
+      "hint": "Фермер у м’ятному починає на першому рядку, а фермер у блакитному — на другому. Торкнися заголовків обох завдань у workTogether. У кожному завданні тричі збери врожай і зроби крок на схід (EAST) відповідним фермером."
+    },
+    "level_54": {
+      "title": "Рівень 54 · Спільний облік врожаю",
+      "goal": "Порахуй врожай з обох рядків одним AtomicInteger",
+      "hint": "Обидва завдання мають доступ до tally, створеного перед workTogether. У кожній ітерації збери врожай, виклич tally.incrementAndGet() і рухайся на схід (EAST). Після завершення обох завдань assert перевіряє, чи спільний підсумок дорівнює 6."
+    },
+    "level_55": {
+      "title": "Рівень 55 · ReentrantLock",
+      "goal": "Захисти читання й запис спільного лічильника одним блокуванням",
+      "hint": "Додай блок gate.lock() в обох циклах. Усередині try додай рядок «counter.total = counter.total + 1;». Створений блок finally звільнить те саме блокування. На кожній ітерації збери врожай і зроби крок на схід (EAST). Обидва завдання мають використовувати той самий gate."
+    },
+    "level_56": {
+      "title": "Рівень 56 · Взаємне блокування",
+      "goal": "Узгодь порядок блокувань насосів, щоб полити обидва паростки",
+      "hint": "Запусти початкову програму. Кожне завдання захопить блокування одного насоса, а потім запросить блокування іншого. Коли завдання чекають одне на одне, гра повідомляє про взаємне блокування. Торкнися назв блокувань у другому завданні й установи той самий порядок, що й у першому. Спочатку pumpA, потім pumpB. Обом завданням потрібні обидва насоси."
+    }
+  },
+  "messages": {
+    "Write the crop positions into the array before visiting them.": "Перш ніж збирати врожай, запиши координати зупинок у масив.",
+    "Use contains to check whether a column should be skipped.": "Перевір через contains, чи треба пропустити стовпець.",
+    "Use set to replace the route entry for the sprout.": "Заміни за допомогою set зупинку, яка веде до паростка.",
+    "Use remove(index) before iterating the route.": "Виклич remove(index) перед обходом маршруту.",
+    "A sprout was ruined. Leave the young plants intact.": "Паросток загинув. Бережи молоді рослини.",
+    "There is still ripe wheat to harvest. Write the crop positions into the array before visiting them.": "На полі ще є стигла пшениця. Перш ніж збирати врожай, запиши координати зупинок у масив.",
+    "There is still ripe wheat to harvest. Use contains to check whether a column should be skipped.": "На полі ще є стигла пшениця. Перевір через contains, чи треба пропустити стовпець.",
+    "There is still ripe wheat to harvest. Use set to replace the route entry for the sprout.": "На полі ще є стигла пшениця. Заміни за допомогою set зупинку, яка веде до паростка.",
+    "There is still ripe wheat to harvest. Use remove(index) before iterating the route.": "На полі ще є стигла пшениця. Виклич remove(index) перед обходом маршруту.",
+    "Call work() through a local variable declared with the interface type.": "Виклич work() через локальну змінну, оголошену з типом інтерфейсу.",
+    "Store the row plans in an object array, read them back by index, and call work(farmer) on the plan you read.": "Збережи плани рядків у масиві об’єктів. Отримай їх за індексом і виклич work(farmer) для кожного зчитаного плану.",
+    "Call work() once in the for-each body and let that call reach two different Tool implementations.": "У тілі for-each запиши один виклик work(), щоб він виконав дві різні реалізації Tool.",
+    "Leave the young plants intact.": "Бережи молоді рослини.",
+    "There is still ripe wheat to harvest.": "На полі ще є стигла пшениця.",
+    "There is still a dry sprout to water.": "На полі ще є паросток, який треба полити.",
+    "Call Object.equals() with the two names for the same parcel.": "Виклич Object.equals() для двох посилань на той самий об’єкт Parcel.",
+    "Test the Object reference with instanceof Harvester.": "Перевір посилання типу Object через instanceof Harvester.",
+    "Initialize both Route objects with the constructor, then update just one column field.": "Ініціалізуй обидва об’єкти Route конструктором, а потім зміни поле column лише в одному з них.",
+    "Use a final local initialized from Route.STOPS as the loop bound.": "Задай межу циклу через локальну змінну final зі значенням Route.STOPS.",
+    "Leave the young crop untouched.": "Бережи молоді рослини.",
+    "Harvest the remaining wheat.": "Збери решту пшениці.",
+    "Use iterator(), hasNext() and next() on the route.": "Для обходу маршруту використай iterator(), hasNext() і next().",
+    "Use Optional.empty() and orElse(3) for the missing stop.": "Використай Optional.empty() для відсутньої зупинки й orElse(3) для запасної.",
+    "Filter the stops and read the result of findFirst() with orElse().": "Відфільтруй зупинки й отримай результат findFirst() через orElse().",
+    "Use assert farmer.isRipe(); before cutting wheat.": "Перед збиранням пшениці використай «assert farmer.isRipe();».",
+    "Increment the tally inside synchronized (counter) in both jobs.": "Збільшуй лічильник у блоці synchronized (counter) в обох завданнях.",
+    "Increment the same AtomicInteger in both jobs.": "Збільшуй той самий AtomicInteger в обох завданнях.",
+    "Use the published column to reach and harvest the crop.": "Перейди до переданого стовпця й збери врожай.",
+    "Make ready volatile and read it from the receiving job before reading the column.": "Познач ready як volatile і перевір його в другому завданні перед зчитуванням номера стовпця.",
+    "Use the combined tally to reach and harvest the crop.": "Перейди до стовпця за спільним підсумком і збери врожай.",
+    "Visit and harvest each stop inside the forEach lambda.": "Відвідай кожну зупинку й збери врожай усередині лямбди forEach.",
+    "Map the offsets to real columns before the forEach lambda.": "Перетвори зміщення на номери стовпців за допомогою map перед лямбдою forEach.",
+    "Use map, then filter, then harvest in the forEach lambda.": "Застосуй map, потім filter, а врожай збирай у лямбді forEach.",
+    "Filter the stops, count them, and harvest only when the count is 3L.": "Відфільтруй зупинки, порахуй їх і збери врожай лише якщо count дорівнює 3L.",
+    "Use anyMatch to look for column 4 and use its boolean as the if condition.": "Знайди стовпець 4 через anyMatch і використай його логічний результат в умові if.",
+    "Copy the stops with route::add and harvest by looping over route.": "Скопіюй зупинки через route::add і збери врожай у циклі по route.",
+    "Leave the young crops untouched.": "Бережи молоді рослини.",
+    "Keep the young crops intact.": "Бережи молоді рослини.",
+    "Harvest the two rows before finishing.": "Збери врожай в обох рядках.",
+    "Both farmhands must harvest three crops in workTogether.": "Кожен фермер має зібрати по три одиниці врожаю у workTogether.",
+    "Increment the same tally in both jobs and keep the check for all six crops.": "Збільшуй спільний tally в обох завданнях і залиш перевірку підсумку на 6.",
+    "Protect each counter increment with gate and keep the check for all six crops.": "Захисти кожне збільшення лічильника через gate і залиш перевірку підсумку на 6.",
+    "Both farmhands must water their own sprout exactly once.": "Кожен фермер має полити свій паросток рівно один раз.",
+    "Acquire both pump locks in the same order in both jobs.": "Захоплюй обидва блокування насосів в однаковому порядку в обох завданнях.",
+    "Finish on the tile marked with the orange flag.": "Заверши на клітинці з помаранчевим прапорцем.",
+    "AssertionError: Expected ripe wheat": "AssertionError: Очікується стигла пшениця",
+    "AssertionError: Expected one count for each crop": "AssertionError: Кожну зібрану рослину потрібно врахувати один раз",
+    "Place workTogether directly inside run().": "Додай workTogether безпосередньо в тіло run().",
+    "Use a ReentrantLock in a farmhand's job.": "У завданні фермера використовуй ReentrantLock.",
+    "Select a local ReentrantLock variable.": "Вибери локальну змінну типу ReentrantLock.",
+    "workTogether() needs a level with two farmhands.": "Для workTogether() потрібен рівень із двома фермерами.",
+    "Background job exceeded its step limit.": "Фонове завдання перевищило ліміт кроків."
+  },
+  "templates": [
+    {
+      "pattern": "Deadlock: farmer (\\d+) waits for ([^\\s;]+) held by farmer (\\d+); farmer (\\d+) waits for ([^\\s;]+) held by farmer (\\d+)\\. Take the locks in the same order\\.",
+      "replacement": "Взаємне блокування. Фермер $1 чекає на $2, яке утримує фермер $3. Фермер $4 чекає на $5, яке утримує фермер $6. Захоплюй блокування в однаковому порядку."
+    },
+    {
+      "pattern": "Use (first|second) for farm actions in this job\\.",
+      "replacement": "У цьому завданні керуй фермером через $1."
+    }
+  ]
+}
